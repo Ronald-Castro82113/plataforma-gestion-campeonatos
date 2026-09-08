@@ -111,7 +111,7 @@ export default function GestionEquiposPage({
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col">
       {/* Navbar */}
-      <nav className="bg-white border-b border-slate-200 px-6 py-4 shadow-sm flex justify-between items-center">
+      {/* <nav className="bg-white border-b border-slate-200 px-6 py-4 shadow-sm flex justify-between items-center">
         <Link href="/dashboard" className="text-xl font-bold text-slate-900 tracking-tight">
           Indor<span className="text-blue-600">SaaS</span>
         </Link>
@@ -121,7 +121,7 @@ export default function GestionEquiposPage({
         >
           ← Volver a Categorías
         </Link>
-      </nav>
+      </nav> */}
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-8">
         {/* Cabecera Limpia */}
@@ -135,14 +135,20 @@ export default function GestionEquiposPage({
           </div>
           
           {/* BOTÓN DE CONTROL ADMINISTRATIVO ÚNICO */}
-          <div className="flex flex-wrap gap-2">
+          <Link 
+            href={`/dashboard/${campeonatoId}`} 
+            className="text-xs font-semibold text-white bg-emerald-600  hover:bg-emerald-700 px-3 py-2 rounded-lg transition"
+          >
+            ← Volver a Categorías
+          </Link>
+          {/* <div className="flex flex-wrap gap-2">
             <Link 
               href={`/dashboard/${campeonatoId}/categoria/${categoriaId}/fixture`}
               className="text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl transition shadow-sm"
             >
               ⚙️ Configurar Torneo / Fixture
             </Link>
-          </div>
+          </div> */}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -185,11 +191,22 @@ export default function GestionEquiposPage({
                 {equipos.map((equipo) => (
                   <div 
                     key={equipo.id} 
-                    className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex justify-between items-center hover:border-slate-300 transition"
+                    className="bg-blue-100/40 border border-slate-200 rounded-xl p-5 shadow-sm flex justify-between items-center hover:border-slate-300 transition"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-100 text-lg">
-                        🏃‍♂️
+                      {/* Contenedor del escudo */}
+                      <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-100">
+                        <svg 
+                          viewBox="0 0 24 24" 
+                          className="w-6 h-6 text-blue-600" 
+                          fill="currentColor" 
+                          stroke="none" 
+                          strokeWidth="2" 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round"
+                        >
+                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        </svg>
                       </div>
                       <div>
                         <h4 className="font-bold text-slate-900">{equipo.nombre_equipo}</h4>
@@ -198,7 +215,7 @@ export default function GestionEquiposPage({
                     </div>
                     <Link 
                       href={`/dashboard/${campeonatoId}/categoria/${categoriaId}/equipo/${equipo.id}`}
-                      className="text-xs font-bold text-blue-600 hover:bg-blue-50 bg-blue-50/20 border border-blue-100 px-3 py-2 rounded-lg transition text-center"
+                      className="text-xs font-bold text-blue-600 hover:bg-blue-100 bg-white border border-blue-100 px-3 py-2 rounded-lg transition text-center"
                     >
                       Fichar →
                     </Link>

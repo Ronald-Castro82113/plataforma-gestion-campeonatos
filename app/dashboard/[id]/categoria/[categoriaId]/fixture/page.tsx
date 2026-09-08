@@ -388,7 +388,7 @@ export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col relative">
-      <nav className="bg-white border-b border-slate-200 px-6 py-4 shadow-sm flex justify-between items-center">
+      {/* <nav className="bg-white border-b border-slate-200 px-6 py-4 shadow-sm flex justify-between items-center">
         <Link href="/dashboard" className="text-xl font-bold text-slate-900 tracking-tight">
           Indor<span className="text-blue-600">SaaS</span>
         </Link>
@@ -401,7 +401,7 @@ export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id:
         <Link href={`/dashboard/${campeonatoId}/categoria/${categoriaId}`} className="text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-2 rounded-lg transition hover:text-blue-600">
           ← Volver a Inscripciones
         </Link>
-      </nav>
+      </nav> */}
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-8">
         <div className="mb-8 border-b border-slate-200 pb-6">
@@ -434,8 +434,8 @@ export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id:
                       onChange={(e) => setFormato(e.target.value)}
                     >
                       <option value="grupos">Fase de Grupos (Con cabezas de serie)</option>
-                      <option value="liga">Liga Directa (Todos contra todos)</option>
-                      <option value="eliminacion">Eliminación Directa (Playoffs)</option>
+                      {/* <option value="liga">Liga Directa (Todos contra todos)</option>
+                      <option value="eliminacion">Eliminación Directa (Playoffs)</option> */}
                     </select>
                   </div>
 
@@ -518,7 +518,7 @@ export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id:
                     const deEsteGrupo = relacionesGrupos.filter((r: EquipoEnGrupo) => r.grupo_id === g.id);
                     return (
                       <div key={g.id} className="border border-slate-100 rounded-xl bg-slate-50/50 overflow-hidden">
-                        <div className="bg-slate-100 px-3 py-2 font-bold text-xs text-slate-700 flex justify-between">
+                        <div className="bg-blue-200/30 px-3 py-2 font-bold text-xs text-slate-700 flex justify-between">
                           <span>{g.nombre_grupo}</span>
                           <span>{deEsteGrupo.length} Clubes</span>
                         </div>

@@ -128,8 +128,8 @@ export default function GestionCampeonatoPage({ params }: { params: Promise<{ id
         <Link href="/dashboard" className="text-xl font-bold text-slate-900 tracking-tight">
           Indor<span className="text-blue-600">SaaS</span>
         </Link>
-        <Link href="/dashboard" className="text-xs font-semibold text-slate-600 hover:text-blue-600 bg-slate-100 px-3 py-2 rounded-lg transition">
-          ← Volver al Panel
+        <Link href="/dashboard" className="text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-2 rounded-lg transition">
+          ← Volver al Panel Principal
         </Link>
       </nav>
 

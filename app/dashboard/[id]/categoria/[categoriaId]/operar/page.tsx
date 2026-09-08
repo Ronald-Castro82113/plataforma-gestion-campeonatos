@@ -813,7 +813,7 @@ export default function MesaControlPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-blue-500 selection:text-white">
-      <nav className="bg-white border-b border-slate-200 px-4 py-4 flex justify-between items-center shadow-sm">
+      {/* <nav className="bg-white border-b border-slate-200 px-4 py-4 flex justify-between items-center shadow-sm">
         <div className="flex items-center gap-2">
           <span className="text-lg font-black text-slate-900">Indor<span className="text-blue-600">SaaS</span></span>
           <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">Mesa Live</span>
@@ -821,7 +821,7 @@ export default function MesaControlPage({ params }: { params: Promise<{ id: stri
         <Link href={`/dashboard/${campeonatoId}/categoria/${categoriaId}/fixture`} className="text-xs font-bold text-slate-600 hover:text-blue-600 bg-slate-100 px-3 py-2 rounded-xl transition">
           ← Panel General
         </Link>
-      </nav>
+      </nav> */}
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-6 space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 pb-4">
@@ -836,12 +836,12 @@ export default function MesaControlPage({ params }: { params: Promise<{ id: stri
             <button onClick={() => setFiltroHoy(false)} className={`flex-1 sm:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition ${!filtroHoy ? 'bg-blue-600 text-white' : 'text-slate-500'}`}>
               🌐 Fixture Completo
             </button>
-            <Link 
+            {/* <Link 
               href={`/dashboard/${campeonatoId}/categoria/${categoriaId}/posiciones`}
               className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase rounded-xl hover:bg-slate-100 transition"
             >
               📊 Tabla de Posiciones
-            </Link>
+            </Link> */}
           </div>
         </div>
         

@@ -215,12 +215,12 @@ export default function GenerarLlavesPage({
         
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center">
           <div>
-            <h1 className="text-lg font-black uppercase tracking-tight">Generador Automático de Playoffs</h1>
-            <p className="text-xs text-slate-500 font-medium">Selecciona la instancia y el sistema calculará las llaves automáticamente basándose en la tabla.</p>
+            <h1 className="text-lg font-black text-gray-600 uppercase tracking-tight">Generador Automático de Playoffs</h1>
+            <p className="text-xs text-blue-800/50 font-medium">Selecciona la instancia y el sistema calculará las llaves automáticamente basándose en la tabla.</p>
           </div>
-          <Link href={`/dashboard/${campeonatoId}/categoria/${categoriaId}/posiciones`} className="text-xs font-bold uppercase text-slate-400 hover:text-slate-900 transition">
+          {/* <Link href={`/dashboard/${campeonatoId}/categoria/${categoriaId}/posiciones`} className="text-xs font-bold uppercase text-slate-400 hover:text-slate-900 transition">
             ❌ Cancelar
-          </Link>
+          </Link> */}
         </div>
 
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
@@ -279,14 +279,19 @@ export default function GenerarLlavesPage({
           ))}
         </div>
 
-        <button
-          onClick={guardarLlavesEnBaseDatos}
-          disabled={guardando}
-          className="w-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-black uppercase tracking-widest py-3.5 rounded-2xl shadow-md transition"
-        >
-          {guardando ? 'Generando Fixture de Eliminatorias...' : '🚀 Lanzar Playoffs Oficiales'}
-        </button>
-
+        <div className="flex flex-col items-center gap-4">
+          <button
+            onClick={guardarLlavesEnBaseDatos}
+            disabled={guardando}
+            className="w-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-black uppercase tracking-widest py-3.5 rounded-2xl shadow-md transition"
+          >
+            {guardando ? 'Generando Fixture de Eliminatorias...' : '🚀 Lanzar Playoffs Oficiales'}
+          </button>
+            <Link href={`/dashboard/${campeonatoId}/categoria/${categoriaId}/posiciones`}
+            className="w-full text-xs font-black text-center text-white hover:bg-red-600 bg-red-500 py-3.5 rounded-2xl shadow-md uppercase transition">
+            ❌ Cancelar
+          </Link>
+        </div>
       </div>
 
       {/* Alerta flotante moderna */}
