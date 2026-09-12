@@ -166,12 +166,12 @@ function CarruselPartidos({ partidos, nombreTorneo }: CarruselPartidosProps) {
                 <div
                   className={`relative rounded-2xl border backdrop-blur-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${
                     esVivo
-                      ? 'bg-gradient-to-br from-red-950/50 to-slate-800 border-red-500/50 shadow-lg shadow-red-950/20'
+                      ? 'bg-gradient-to-br from-emerald-950/50 to-emerald-800 border-emerald-500/50 shadow-lg shadow-red-950/20'
                       : 'bg-slate-800/90 border-slate-700/80 hover:border-slate-600 shadow-md'
                   }`}
                 >
                   {esVivo && (
-                    <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-red-500 to-transparent animate-pulse" />
+                    <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-green-500 to-transparent animate-pulse" />
                   )}
 
                   {/* Header de la tarjeta */}
@@ -182,13 +182,13 @@ function CarruselPartidos({ partidos, nombreTorneo }: CarruselPartidosProps) {
                     <span
                       className={`flex items-center gap-1.5 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-lg shrink-0 ${
                         esVivo
-                          ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                           : esFin
                           ? 'bg-slate-700/80 text-slate-300 border border-slate-600/50'
                           : 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
                       }`}
                     >
-                      {esVivo && <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-ping" />}
+                      {esVivo && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />}
                       {esVivo ? 'EN VIVO' : esFin ? 'FINALIZADO' : 'PROGRAMADO'}
                     </span>
                   </div>
@@ -245,7 +245,7 @@ function CarruselPartidos({ partidos, nombreTorneo }: CarruselPartidosProps) {
                   {/* Footer de la tarjeta */}
                   <div className="border-t border-slate-700/60 px-4 py-2.5 flex items-center justify-between text-[11px] text-slate-300 bg-slate-800/50">
                     <span className="truncate flex items-center gap-1.5 font-medium">
-                      📍 {partido.lugar || 'Cancha Central'}
+                      {/* 📍 {partido.lugar || 'Cancha Central'} */}
                     </span>
                     <button 
                       onClick={() => setPartidoSeleccionadoModal(partido)}
@@ -803,8 +803,8 @@ export default function VistaPublicaTorneoPage({ params }: { params: Promise<{ i
                 {partidosEnVivo.length > 0 && (
                   <div className="space-y-4">
                     <div className="flex items-center gap-2">
-                      <span className="h-3 w-3 rounded-full bg-red-600 animate-ping"></span>
-                      <h2 className="text-xs font-black uppercase tracking-widest text-red-500">Partidos en Vivo Ahora</h2>
+                      <span className="h-3 w-3 rounded-full bg-emerald-600 animate-ping"></span>
+                      <h2 className="text-xs font-black uppercase tracking-widest text-emerald-500">Partidos en Vivo Ahora</h2>
                     </div>
 
                     <div className="grid grid-cols-1 gap-6">
@@ -829,8 +829,8 @@ export default function VistaPublicaTorneoPage({ params }: { params: Promise<{ i
                               <span className="text-slate-400 flex items-center gap-2">
                                 🏆 {campeonato?.nombre_campeonato || 'Torneo'} · Jornada {p.numero_fecha}
                               </span>
-                              <span className="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-full text-[10px] flex items-center gap-1.5 shadow-sm">
-                                <span className="h-2 w-2 rounded-full bg-red-500 animate-ping"></span>
+                              <span className="bg-blue-500/20 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-full text-[10px] flex items-center gap-1.5 shadow-sm">
+                                <span className="h-2 w-2 rounded-full bg-blue-500 animate-ping"></span>
                                 {p.periodo_actual || 'EN VIVO'}
                               </span>
                             </div>

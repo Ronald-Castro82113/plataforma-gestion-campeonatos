@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { useRouter } from 'next/navigation';
 
 interface Perfil {
   id: string;
@@ -55,6 +56,15 @@ export default function SuperAdminPage() {
   const [linkTransmision, setLinkTransmision] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
   const [toastText, setToastText] = useState('');
+
+  const router = useRouter();
+
+  // Función para cerrar sesión de Super Admin
+  const cerrarSesion = async () => {
+    await supabase.auth.signOut();
+    router.refresh();
+    window.location.href = '/super-admin/login';
+  };
 
   useEffect(() => {
     async function cargarDatosIniciales() {
@@ -234,7 +244,7 @@ export default function SuperAdminPage() {
       <nav className="bg-white border-b border-slate-200 px-6 py-4 shadow-sm">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-            Indor<span className="text-blue-600">SaaS</span> <span className="text-xs font-semibold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md ml-2">Super Admin</span>
+            Casmi <span className="text-emerald-700">Sports</span> <span className="text-xs font-semibold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md ml-2">Super Admin</span>
           </h1>
           <div className="flex gap-2">
             <button
@@ -253,13 +263,14 @@ export default function SuperAdminPage() {
             >
               🎥 Centro de Streaming OBS
             </button>
+
+            {/* BOTÓN DE CERRAR SESIÓN */}
             <button
-              onClick={() => setPestanaActiva('campeonatos')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition ${
-                pestanaActiva === 'campeonatos' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
+              onClick={cerrarSesion}
+              className="ml-2 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition flex items-center gap-1.5"
             >
-              🏆 Gestionar Destacado Principal
+              <span>🚪</span>
+              <span>Cerrar Sesión</span>
             </button>
           </div>
         </div>

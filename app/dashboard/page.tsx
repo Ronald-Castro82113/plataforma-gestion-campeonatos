@@ -80,7 +80,7 @@ export default function DashboardPage() {
       {/* Navbar Superior */}
       <nav className="bg-white border-b border-slate-200 px-6 py-4 shadow-sm flex justify-between items-center">
         <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-          Indor<span className="text-blue-600">SaaS</span>
+          Casmi <span className="text-emerald-700">Sports</span>
         </h1>
         <div className="flex items-center gap-4">
           <span className="text-sm font-medium text-slate-600">
@@ -100,10 +100,33 @@ export default function DashboardPage() {
         
         {/* Banner de Bienvenida */}
         <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm shadow-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-          <div>
-            <h2 className="text-2xl font-extrabold text-slate-900">¡Bienvenido a tu plataforma de ligas!</h2>
+          {/* <div>
+            <h2 className="text-2xl font-extrabold text-slate-900">¡Bienvenido Casmi Sports!</h2>
+            <h3>La Plataforma para gestionar tu campeonato.</h3>
             <p className="text-slate-500 text-sm mt-1">Aquí podrás automatizar calendarios, tablas de posiciones y estadísticas en tiempo real.</p>
+          </div> */}
+          <div className="space-y-2">
+            {/* Etiqueta pequeña para dar contexto */}
+            <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 text-[10px] font-black uppercase tracking-widest rounded-full">
+              Gestión Deportiva
+            </span>
+            
+            {/* Título con mejor impacto */}
+            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+              ¡Bienvenido a <span className="text-emerald-600">Casmi</span> <span className="text-emerald-700">Sports!</span>
+            </h2>
+            
+            {/* Subtítulo con mejor peso visual */}
+            <h3 className="text-lg font-medium text-slate-700">
+              La plataforma definitiva para gestionar tu campeonato.
+            </h3>
+            
+            {/* Párrafo con mejor legibilidad */}
+            <p className="text-slate-500 text-sm md:text-base max-w-md leading-relaxed">
+              Automatiza calendarios, tablas de posiciones y estadísticas en tiempo real. Todo lo que necesitas para llevar tu torneo al siguiente nivel.
+            </p>
           </div>
+
           <Link 
             href="/dashboard/nuevo-campeonato"
             className="rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 hover:shadow-blue-700/30 active:scale-[0.98] whitespace-nowrap"

@@ -96,8 +96,8 @@ export default function OverlayCategoriaPage() {
     return <div className="h-screen bg-transparent"></div>;
   }
 
-  const nombreLocal = partido.equipo_local?.nombre_equipo || 'Local';
-  const nombreVisita = partido.equipo_visita?.nombre_equipo || 'Visita';
+  const nombreLocal = partido.equipo_local?.nombre_equipo || 'LOCAL';
+  const nombreVisita = partido.equipo_visita?.nombre_equipo || 'VISITA';
   
   // Mapeo seguro de periodo_actual
   let textoPeriodo = '1T';
@@ -106,43 +106,60 @@ export default function OverlayCategoriaPage() {
   else if (partido.periodo_actual === 'no_iniciado') textoPeriodo = '1T';
 
   return (
-    <div className="flex items-center justify-center h-screen bg-transparent p-4">
-      {/* Contenedor principal con ancho fijo para adaptar nombres proporcionalmente */}
-      <div className="flex flex-col items-center gap-2 w-[440px]">
+    <div className="flex items-center justify-center h-screen bg-transparent p-4 font-sans">
+      {/* Contenedor Principal del Marcador */}
+      <div className="flex flex-col items-center select-none">
         
-        {/* Marcador Principal */}
-        <div className="w-full flex items-center justify-between bg-blue-950 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden text-white font-sans px-4 py-3">
+        <div className="flex items-center relative">
           
-          {/* Equipo Local */}
-          <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
-            <span className="font-bold text-sm sm:text-base tracking-wide truncate text-right uppercase mr-5">
-              {nombreLocal}
-            </span>
-            <div className="bg-blue-600/90 text-white font-black text-lg sm:text-xl px-3.5 py-1.5 rounded-xl shadow-inner min-w-[42px] text-center shrink-0">
-              {partido.goles_local ?? 0}
+          {/* LADO IZQUIERDO (Equipo Local) con capas de fondo decorativas */}
+          <div className="relative mr-4">
+            {/* Franja verde trasera */}
+            <div className="absolute -top-1 -left-3 right-0 -bottom-2 bg-[#008f4c] rounded-l-[40px] z-0"></div>
+            {/* Franja roja intermedia */}
+            <div className="absolute -top-1 -left-2 right-0 -bottom-1 bg-[#bd1522] rounded-l-[35px] z-1"></div>
+
+            {/* Caja principal equipo local */}
+            <div className="relative z-10 bg-[#031b4e] flex items-center h-[100px] rounded-l-[35px] pl-8 shadow-2xl">
+              <span className="text-white text-4xl sm:text-5xl font-black uppercase tracking-wider truncate max-w-[220px]">
+                {nombreLocal}
+              </span>
+              <div className="bg-[#175be6] text-white text-4xl sm:text-5xl font-black w-24 h-full flex items-center justify-center rounded-l-[30px] ml-6 shrink-0 shadow-inner">
+                {partido.goles_local ?? 0}
+              </div>
             </div>
           </div>
 
-          {/* VS */}
-          <div className="bg-black/15 rounded-xl mr-2 ml-2 px-1 py-1 text-slate-500 font-black text-[10px] italic tracking-widest shrink-0">
-            VS
+          {/* LOGO CENTRAL (logo_copa) */}
+          <div className="relative z-30 mx-[-20px] flex items-center justify-center shrink-0">
+            <img 
+              className="w-20 h-auto drop-shadow-lg object-contain" 
+              src="/logo_copa.png" 
+              alt="Logo Copa" 
+              onError={(e) => {
+                // Oculta la imagen de manera segura si todavía no se ha colocado el archivo en public/
+                e.currentTarget.style.display = 'none';
+              }}
+            />
           </div>
 
-          {/* Equipo Visita */}
-          <div className="flex items-center gap-3 flex-1 justify-start min-w-0">
-            <div className="bg-blue-600/90 text-white font-black text-lg sm:text-xl px-3.5 py-1.5 rounded-xl shadow-inner min-w-[42px] text-center shrink-0">
-              {partido.goles_visita ?? 0}
+          {/* LADO DERECHO (Equipo Visita) */}
+          <div className="relative ml-4">
+            <div className="relative z-10 bg-[#031b4e] flex items-center h-[100px] rounded-r-[35px] pr-8 shadow-2xl">
+              <div className="bg-[#175be6] text-white text-4xl sm:text-5xl font-black w-24 h-full flex items-center justify-center rounded-r-[30px] mr-6 shrink-0 shadow-inner">
+                {partido.goles_visita ?? 0}
+              </div>
+              <span className="text-white text-4xl sm:text-5xl font-black uppercase tracking-wider truncate max-w-[220px]">
+                {nombreVisita}
+              </span>
             </div>
-            <span className="font-bold text-sm sm:text-base tracking-wide truncate text-left uppercase ml-5">
-              {nombreVisita}
-            </span>
           </div>
 
         </div>
 
-        {/* Indicador de Periodo (Flotando ABAJO del marcador) */}
-        <div className="bg-emerald-600/90 backdrop-blur-md border border-blue-500/40 px-3.5 py-0.5 rounded-full text-white text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center gap-1.5">
-          <span className="animate-pulse h-2 w-2 rounded-full bg-white inline-block"></span>
+        {/* INDICADOR DE TIEMPO (Flotando abajo del marcador) */}
+        <div className="mt-4 bg-[#17a06c] text-white text-2xl font-black px-8 py-1.5 rounded-full flex items-center gap-3 shadow-xl uppercase tracking-widest border border-emerald-500/30">
+          <span className="w-4 h-4 bg-[#b3eccf] rounded-full animate-pulse inline-block shadow-sm"></span>
           <span>{textoPeriodo}</span>
         </div>
 

@@ -126,7 +126,7 @@ export default function GestionCampeonatoPage({ params }: { params: Promise<{ id
       {/* Navbar */}
       <nav className="bg-white border-b border-slate-200 px-6 py-4 shadow-sm flex justify-between items-center">
         <Link href="/dashboard" className="text-xl font-bold text-slate-900 tracking-tight">
-          Indor<span className="text-blue-600">SaaS</span>
+          Casmi <span className="text-emerald-600">Sports</span>
         </Link>
         <Link href="/dashboard" className="text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-2 rounded-lg transition">
           ← Volver al Panel Principal
@@ -190,7 +190,7 @@ export default function GestionCampeonatoPage({ params }: { params: Promise<{ id
                       href={`/dashboard/${campeonatoId}/categoria/${cat.id}`}
                       className="text-xs font-bold text-blue-600 hover:bg-blue-50 border border-blue-100 bg-blue-50/30 px-3 py-2 rounded-lg transition text-center"
                     >
-                      Ver Equipos →
+                      INGRESAR →
                     </Link>
                   </div>
                 ))}

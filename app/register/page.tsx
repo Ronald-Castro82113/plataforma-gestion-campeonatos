@@ -38,12 +38,13 @@ export default function RegisterPage() {
 
         if (perfilError) throw perfilError;
 
-        setMensaje('¡Registro completado! Tu solicitud ha sido enviada al Super Admin.');
+        setMensaje('¡Registro exitoso! 📧 Revisa tu bandeja de correo electrónico y haz clic en el enlace de confirmación para activar tu cuenta.');
       }
     } catch (error) {
       const err = error as { message?: string; error_description?: string };
       // Esto te mostrará el error exacto flotando en la pantalla del celular
-      setMensaje(`⚠️ Error al registrar: ${err.message || err.error_description || JSON.stringify(error)}`);
+      // setMensaje(`⚠️ Error al registrar: ${err.message || err.error_description || JSON.stringify(error)}`);
+      setMensaje(`Error al registrar: Este correo no puede ser registrado`);
     } finally {
       setLoading(false);
     }

@@ -4,7 +4,7 @@ export default function Home() {
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
+        {/* <Image
           className="dark:invert"
           src="/next.svg"
           alt="Next.js logo"
@@ -58,8 +58,42 @@ export default function Home() {
           >
             Documentation
           </a>
+        </div> */}
+        <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+          {/* Icono animado o decorativo */}
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+            <svg 
+              className="w-10 h-10 text-green-600" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor" 
+              strokeWidth={3}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+
+          {/* Título y descripción */}
+          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            ¡Todo listo!
+          </h2>
+          <p className="text-slate-500 mt-3 max-w-sm">
+            Tu correo ha sido verificado con éxito. Ahora estás registrado a <span className="font-bold text-slate-900">Casmi Sports</span>.
+          </p>
+
+          {/* Botón de acción */}
+          <div className="mt-8 w-full max-w-xs">
+            {/* <Link 
+              href="/login" 
+              className="block w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-2xl shadow-lg transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+            >
+              Ir al Panel
+            </Link> */}
+          </div>
         </div>
+
       </main>
+
     </div>
   );
 }
