@@ -80,6 +80,13 @@ export default function GestionCampeonatoPage({ params }: { params: Promise<{ id
     }
   }, [campeonatoId]);
 
+  // Efecto para cambiar el título con el nombre real del campeonato
+  useEffect(() => {
+    if (campeonato?.nombre_campeonato) {
+      document.title = `${campeonato.nombre_campeonato} - Categorías`;
+    }
+  }, [campeonato]);
+
   // Función para agregar una nueva categoría en la base de datos
   const agregarCategoria = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,7 +133,7 @@ export default function GestionCampeonatoPage({ params }: { params: Promise<{ id
       {/* Navbar */}
       <nav className="bg-white border-b border-slate-200 px-6 py-4 shadow-sm flex justify-between items-center">
         <Link href="/dashboard" className="text-xl font-bold text-slate-900 tracking-tight">
-          Casmi <span className="text-emerald-600">Sports</span>
+          <img src="/logo_casmi_sports.png" alt="Casmi Sports" className="h-10 w-auto object-contain"/>
         </Link>
         <Link href="/dashboard" className="text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-2 rounded-lg transition">
           ← Volver al Panel Principal
@@ -160,7 +167,7 @@ export default function GestionCampeonatoPage({ params }: { params: Promise<{ id
               <button
                 type="submit"
                 disabled={btnLoading}
-                className="w-full rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-600/10 transition hover:bg-blue-700 active:scale-[0.99] disabled:opacity-50"
+                className="w-full rounded-xl bg-cyan-900 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-600/10 transition hover:bg-cyan-700 active:scale-[0.99] disabled:opacity-50"
               >
                 {btnLoading ? 'Guardando...' : '➕ Crear Categoría'}
               </button>

@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from 'react';
 import { supabase } from '../../../lib/supabase';
 import Link from 'next/link';
+import InstalarApp from '../InstalarApp';
 
 interface Campeonato {
   id: string;
@@ -662,20 +663,12 @@ export default function VistaPublicaTorneoPage({ params }: { params: Promise<{ i
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
           {/* Izquierda: Icono, Subtítulo, Badge y Título */}
           <div className="flex items-center space-x-3.5 w-full lg:w-auto justify-start">
-            <div className="p-2.5 bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30 flex items-center justify-center shrink-0">
-              <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-                <path d="M4 22h16" />
-                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
-                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
-                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
-              </svg>
-            </div>
+            <img src="/logo_cs_torneo.png" alt="Casmi Sports" className="h-10 w-auto object-contain"/>
+            <div className="h-10 w-px bg-slate-600/70" />
             <div>
               <div className="flex items-center space-x-2">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-blue-400">Portal Oficial del Campeonato</span>
-                <span className="px-2.5 py-0.5 text-[10px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-full uppercase tracking-wider">Senior</span>
+                {/* <span className="px-2.5 py-0.5 text-[10px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-full uppercase tracking-wider">Senior</span> */}
               </div>
               <h1 className="text-xl md:text-2xl font-black tracking-tight text-white mt-0.5 flex items-center gap-2">
                 {campeonato?.nombre_campeonato || 'Cargando Torneo...'} 
@@ -722,7 +715,7 @@ export default function VistaPublicaTorneoPage({ params }: { params: Promise<{ i
               onClick={() => setSeccionActiva('posiciones')}
               className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 ${
                 seccionActiva === 'posiciones'
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
+                  ? 'bg-emerald-600 text-white shadow-lg shadow-blue-600/25'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
               }`}
             >
@@ -770,9 +763,38 @@ export default function VistaPublicaTorneoPage({ params }: { params: Promise<{ i
             </button>
           </div>
         </div>
+
+        {/*Barra de pestañas desplegable para seleccionar la categoría */}
+        {categorias.length > 0 && (
+          <div className="max-w-7xl mx-auto mt-4 pt-3 border-t border-slate-800/80 flex items-center gap-3 overflow-x-auto scrollbar-none">
+            <span className="text-[12px] font-black uppercase tracking-widest shrink-0 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              Categoría:
+            </span>
+            <div className="flex items-center gap-2">
+              {categorias.map((cat) => {
+                const esActiva = categoriaSeleccionada === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setCategoriaSeleccionada(cat.id)}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-extrabold uppercase tracking-wide transition-all shrink-0 cursor-pointer ${
+                      esActiva
+                        ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-md shadow-blue-500/25 '
+                        : 'bg-slate-900/90 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800'
+                    }`}
+                  >
+                    {cat.nombre_categoria}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <InstalarApp />
         {cargando ? (
           <div className="text-center py-24 text-xs font-bold text-slate-500 uppercase tracking-widest animate-pulse">
             Sincronizando portal deportivo en tiempo real...

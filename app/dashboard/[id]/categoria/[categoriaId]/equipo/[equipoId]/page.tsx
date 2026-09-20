@@ -242,7 +242,7 @@ export default function GestionJugadoresPage({
         </div> */}
         <div className="flex justify-between items-start mb-8 border-b border-slate-200 pb-6">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Historial de Fichajes</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-blue-900">Historial de Fichajes</span>
             <h2 className="text-3xl font-extrabold text-slate-900 mt-1">
               Plantilla: {equipo?.nombre_equipo}
             </h2>
@@ -320,7 +320,7 @@ export default function GestionJugadoresPage({
                 <button
                   type="submit"
                   disabled={btnLoading}
-                  className="w-full rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-md hover:bg-blue-700 transition disabled:opacity-50"
+                  className="w-full rounded-xl bg-cyan-900 py-2.5 text-xs font-bold text-white shadow-md hover:bg-cyan-700 transition disabled:opacity-50"
                 >
                   {btnLoading ? 'Guardando...' : (editandoInscripcionId ? '💾 Actualizar Datos' : '🏃‍♂️ Realizar Fichaje')}
                 </button>

@@ -46,7 +46,8 @@ export default function LoginPage() {
       }
     } catch (error) {
       if (error instanceof Error) {
-        setErrorMsg(`Error: ${error.message}`);
+        // setErrorMsg(`Error: ${error.message}`);
+        setErrorMsg(`Credenciales no válidas`);
       } else {
         setErrorMsg('Error al iniciar sesión.');
       }
@@ -59,13 +60,8 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50/50 p-4 font-sans text-slate-800">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
         <div className="text-center mb-8">
-          <span className="inline-flex items-center justify-center rounded-xl bg-blue-50 p-3 text-2xl mb-3">
-            🏆
-          </span>
-          <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
-            Indor<span className="text-blue-600">SaaS</span>
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">Panel de control de campeonatos</p>
+          <img src="/logo_casmi_sports.png" alt="Casmi Sports" className="mx-auto mb-4 h-20 w-auto object-contain"/>
+          {/* <p className="text-sm text-slate-500">Panel de control de campeonatos</p> */}
         </div>
 
         <form onSubmit={iniciarSesion} className="space-y-5">
@@ -120,7 +116,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-blue-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 hover:shadow-blue-700/30 active:scale-[0.99] disabled:opacity-50"
+            className="w-full rounded-xl bg-emerald-500 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 hover:shadow-blue-700/30 active:scale-[0.99] disabled:opacity-50"
           >
             {loading ? 'Verificando credenciales...' : 'Ingresar al Sistema'}
           </button>
@@ -135,7 +131,7 @@ export default function LoginPage() {
         <div className="mt-8 text-center text-sm text-slate-500 border-t border-slate-100 pt-6">
           ¿Eres un organizador nuevo?{' '}
           <Link href="/register" className="font-semibold text-blue-600 hover:text-blue-700 hover:underline">
-            Solicita tu plataforma aquí
+            Solicita tu cuenta aquí
           </Link>
         </div>
       </div>

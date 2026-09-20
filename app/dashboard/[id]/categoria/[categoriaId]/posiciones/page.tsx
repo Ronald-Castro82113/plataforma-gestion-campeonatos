@@ -152,7 +152,7 @@ export default function PosicionesCategoriaPage({
             {/* <Link href={`/dashboard/${campeonatoId}/categoria/${categoriaId}/operar`} className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider py-2.5 px-4 rounded-xl shadow-sm transition">
               ⬅️ Volver a Operar
             </Link> */}
-            <Link href={`/dashboard/${campeonatoId}/categoria/${categoriaId}/posiciones/generar`} className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-wider py-2.5 px-4 rounded-xl shadow-sm transition">
+            <Link href={`/dashboard/${campeonatoId}/categoria/${categoriaId}/posiciones/generar`} className="inline-flex items-center gap-2 bg-cyan-900 hover:bg-cyan-700 text-white text-xs font-black uppercase tracking-wider py-2.5 px-4 rounded-xl shadow-sm transition">
               🏆 Configurar Llaves Finales
             </Link>
           </div>

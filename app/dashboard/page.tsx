@@ -61,6 +61,11 @@ export default function DashboardPage() {
 
     cargarDatosDashboard();
   }, [router]);
+  
+  // Efecto para cambiar el título en la pestaña del navegador
+  useEffect(() => {
+    document.title = "Casmi Sports | Campeonatos";
+  }, []);
 
   const cerrarSesion = async () => {
     await supabase.auth.signOut();
@@ -79,9 +84,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col">
       {/* Navbar Superior */}
       <nav className="bg-white border-b border-slate-200 px-6 py-4 shadow-sm flex justify-between items-center">
-        <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-          Casmi <span className="text-emerald-700">Sports</span>
-        </h1>
+        <img src="/logo_casmi_sports.png" alt="Casmi Sports" className="h-10 w-auto object-contain"/>
         <div className="flex items-center gap-4">
           <span className="text-sm font-medium text-slate-600">
             👋 Hola, <span className="font-bold text-slate-900">{userName}</span>
@@ -100,20 +103,15 @@ export default function DashboardPage() {
         
         {/* Banner de Bienvenida */}
         <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm shadow-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-          {/* <div>
-            <h2 className="text-2xl font-extrabold text-slate-900">¡Bienvenido Casmi Sports!</h2>
-            <h3>La Plataforma para gestionar tu campeonato.</h3>
-            <p className="text-slate-500 text-sm mt-1">Aquí podrás automatizar calendarios, tablas de posiciones y estadísticas en tiempo real.</p>
-          </div> */}
           <div className="space-y-2">
             {/* Etiqueta pequeña para dar contexto */}
-            <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 text-[10px] font-black uppercase tracking-widest rounded-full">
+            <span className="inline-block px-3 py-1 bg-blue-50 text-blue-800 text-[10px] font-black uppercase tracking-widest rounded-full">
               Gestión Deportiva
             </span>
             
             {/* Título con mejor impacto */}
             <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
-              ¡Bienvenido a <span className="text-emerald-600">Casmi</span> <span className="text-emerald-700">Sports!</span>
+              ¡Bienvenido a <span className="text-emerald-500">Casmi</span> <span className="text-cyan-900">Sports!</span>
             </h2>
             
             {/* Subtítulo con mejor peso visual */}
@@ -129,7 +127,7 @@ export default function DashboardPage() {
 
           <Link 
             href="/dashboard/nuevo-campeonato"
-            className="rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 hover:shadow-blue-700/30 active:scale-[0.98] whitespace-nowrap"
+            className="rounded-xl bg-cyan-900 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-cyan-700 hover:shadow-blue-700/30 active:scale-[0.98] whitespace-nowrap"
           >
             🏆 Crear Nuevo Campeonato
           </Link>
@@ -180,7 +178,7 @@ export default function DashboardPage() {
                 {/* Botón dinámico para entrar a gestionar este campeonato específico */}
                 <Link 
                   href={`/dashboard/${torneo.id}`}
-                  className="text-xs font-bold bg-blue-50 text-blue-600 hover:bg-blue-100 px-4 py-2.5 rounded-lg border border-blue-100 transition text-center"
+                  className="text-xs font-bold bg-blue-50 text-blue-900 hover:bg-blue-100 px-4 py-2.5 rounded-lg border border-blue-100 transition text-center"
                 >
                   Gestionar →
                 </Link>

@@ -264,6 +264,17 @@ export default function SuperAdminPage() {
               🎥 Centro de Streaming OBS
             </button>
 
+            <button
+              onClick={() => setPestanaActiva('campeonatos')}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition ${
+                pestanaActiva === 'campeonatos'
+                  ? 'bg-slate-900 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              ⭐ Campeonatos Destacados
+            </button>
+
             {/* BOTÓN DE CERRAR SESIÓN */}
             <button
               onClick={cerrarSesion}

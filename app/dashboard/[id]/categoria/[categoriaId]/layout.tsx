@@ -1,4 +1,3 @@
-// app/dashboard/[id]/categoria/[categoriaId]/layout.tsx
 'use client';
 
 import { useEffect, useState, use } from 'react';
@@ -21,19 +20,23 @@ export default function CategoriaLayout({ children, params }: LayoutProps) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [esOperador, setEsOperador] = useState(false);
   const [nombreCategoria, setNombreCategoria] = useState('Categoría');
+  const [modalError, setModalError] = useState<string | null>(null);
+  const [isModalLoading, setIsModalLoading] = useState(false);
+
+  // NUEVOS ESTADOS: Para ver/ocultar contraseña y para la alerta de éxito elegante
+  const [mostrarPassword, setMostrarPassword] = useState(false);
+  const [modalExito, setModalExito] = useState(false);
 
   useEffect(() => {
     const cargarDatosLayout = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // Fallback inicial usando metadatos de auth o el correo por si el perfil tarda o no existe
         if (user.user_metadata?.nombre) {
           setNombreUsuario(user.user_metadata.nombre);
         } else if (user.email) {
           setNombreUsuario(user.email.split('@')[0]);
         }
 
-        // 1. Cargar perfil del usuario (nombre y avatar) desde la tabla
         const { data: perfil } = await supabase
           .from('perfiles_usuarios')
           .select('nombre_completo')
@@ -44,7 +47,6 @@ export default function CategoriaLayout({ children, params }: LayoutProps) {
           setNombreUsuario(perfil.nombre_completo);
         }
 
-        // 2. Verificar si este usuario es operador en este campeonato
         const { data: operadorData } = await supabase
           .from('operadores_campeonatos')
           .select('*')
@@ -57,7 +59,6 @@ export default function CategoriaLayout({ children, params }: LayoutProps) {
         }
       }
 
-      // 3. Cargar el nombre de la categoría actual
       const { data: catData } = await supabase
         .from('categorias')
         .select('*')
@@ -72,9 +73,23 @@ export default function CategoriaLayout({ children, params }: LayoutProps) {
     cargarDatosLayout();
   }, [campeonatoId, categoriaId]);
 
+  useEffect(() => {
+    let seccionActual = "Equipos";
+
+    if (pathname.includes("/fixture")) {
+      seccionActual = "Fixture";
+    } else if (pathname.includes("/operar")) {
+      seccionActual = "Mesa de Control";
+    } else if (pathname.includes("/posiciones")) {
+      seccionActual = "Posiciones y Llaves";
+    }
+
+    document.title = `${seccionActual}`;
+  }, [pathname, nombreCategoria]);
+
   const handleCerrarSesion = async () => {
     await supabase.auth.signOut();
-    router.push('/');
+    router.push('/login');
   };
 
   const todasLasPestañas = [
@@ -85,7 +100,6 @@ export default function CategoriaLayout({ children, params }: LayoutProps) {
     { nombre: 'Crear Operador', ruta: `/dashboard/${campeonatoId}/operadores` },
   ];
 
-  // Pestañas específicas para el rol operador (incluye "Inicio" para volver al selector de categorías)
   const pestañasOperador = [
     { nombre: 'Inicio', ruta: '/dashboard/operador' },
     { nombre: 'Operar (Mesa)', ruta: `/dashboard/${campeonatoId}/categoria/${categoriaId}/operar` },
@@ -105,11 +119,9 @@ export default function CategoriaLayout({ children, params }: LayoutProps) {
       
       {/* Barra Superior */}
       <header className="bg-white border-b border-slate-200 px-6 py-3 flex justify-between items-center shadow-xs">
-        
-        {/* Izquierda: Logo y miga de pan dinámica */}
         <div className="flex items-center gap-3 shrink-0">
           <Link href={esOperador ? "/dashboard/operador" : `/dashboard/${campeonatoId}`} className="text-sm font-black text-slate-900 hover:text-blue-600 transition">
-            Indor<span className="text-blue-600">SaaS</span>
+            <img src="/logo_casmi_sports.png" alt="Casmi Sports" className="h-10 w-auto object-contain"/>
           </Link>
           <span className="text-slate-300">/</span>
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Categoría</span>
@@ -118,7 +130,6 @@ export default function CategoriaLayout({ children, params }: LayoutProps) {
           </span>
         </div>
 
-        {/* Derecha: Pestañas de Navegación, Usuario y Cerrar Sesión (Escritorio) */}
         <div className="hidden md:flex items-center gap-8">
           <nav className="flex items-center gap-6">
             {pestañas.map((tab) => {
@@ -143,7 +154,7 @@ export default function CategoriaLayout({ children, params }: LayoutProps) {
                   href={tab.ruta}
                   className={`text-xs font-black uppercase tracking-wider transition pb-0.5 border-b-2 ${
                     activo 
-                      ? 'border-blue-600 text-blue-600' 
+                      ? 'border-cyan-600 text-cyan-800' 
                       : 'border-transparent text-slate-400 hover:text-slate-700'
                   }`}
                 >
@@ -155,7 +166,6 @@ export default function CategoriaLayout({ children, params }: LayoutProps) {
 
           <div className="h-4 w-px bg-slate-200"></div>
 
-          {/* Perfil y Cerrar Sesión */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-xs overflow-hidden border border-slate-200 shadow-sm">
@@ -180,7 +190,6 @@ export default function CategoriaLayout({ children, params }: LayoutProps) {
           </div>
         </div>
 
-        {/* Botón de cerrar sesión rápido para vista móvil en la cabecera */}
         <div className="flex md:hidden items-center gap-2">
           <button
             onClick={handleCerrarSesion}
@@ -230,9 +239,11 @@ export default function CategoriaLayout({ children, params }: LayoutProps) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-fadeIn">
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-lg w-full p-8 relative overflow-hidden">
             
-            {/* Botón de cerrar */}
             <button
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => {
+                setIsModalOpen(false);
+                setModalError(null);
+              }}
               className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 p-2 rounded-full transition"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -241,13 +252,39 @@ export default function CategoriaLayout({ children, params }: LayoutProps) {
             </button>
 
             <div className="mb-6">
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">Crear Operador para este Campeonato</h3>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">Crear Nuevo Operador</h3>
               <p className="text-xs font-medium text-slate-500 mt-1">
-                Crea una cuenta exclusiva para que este operador controle únicamente los partidos de este campeonato actual.
+                El operador recibirá un correo de invitación para verificar su cuenta y establecer su contraseña.
               </p>
             </div>
 
-            <form action={crearOperadorParaCampeonato} onSubmit={() => setIsModalOpen(false)} className="space-y-4">
+            {modalError && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl">
+                {modalError}
+              </div>
+            )}
+
+            <form 
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setModalError(null);
+                setIsModalLoading(true);
+
+                const formData = new FormData(e.currentTarget);
+                const resultado = await crearOperadorParaCampeonato(formData);
+
+                setIsModalLoading(false);
+
+                if (resultado && !resultado.success) {
+                  setModalError(resultado.error || 'Ocurrió un error.');
+                } else {
+                  setIsModalOpen(false);
+                  setModalError(null);
+                  setModalExito(true);
+                }
+              }} 
+              className="space-y-4"
+            >
               <input type="hidden" name="campeonatoId" value={campeonatoId} />
 
               <div>
@@ -276,35 +313,58 @@ export default function CategoriaLayout({ children, params }: LayoutProps) {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                  Contraseña
-                </label>
-                <input
-                  name="password"
-                  type="password"
-                  required
-                  className="w-full border border-slate-200 bg-slate-50/50 rounded-xl px-4 py-2.5 text-sm font-medium focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none transition"
-                  placeholder="••••••••"
-                />
-              </div>
-
               <div className="pt-2 flex gap-3">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setModalError(null);
+                  }}
                   className="w-1/3 bg-slate-100 text-slate-700 font-bold py-3 rounded-xl text-xs uppercase tracking-wider hover:bg-slate-200 transition"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="w-2/3 bg-blue-600 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider hover:bg-blue-700 transition shadow-lg shadow-blue-600/20"
+                  disabled={isModalLoading}
+                  className="w-2/3 bg-emerald-500 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider hover:bg-blue-700 transition shadow-lg shadow-blue-600/20 disabled:opacity-50"
                 >
-                  Registrar Operador
+                  {isModalLoading ? 'Creando operador...' : 'Crear Operador'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE ÉXITO */}
+      {modalExito && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full p-8 text-center relative">
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-inner">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+
+            <h3 className="text-xl font-black text-slate-900 tracking-tight">¡Invitación Enviada!</h3>
+            
+            <p className="text-sm font-medium text-slate-600 mt-2.5 leading-relaxed">
+              Hemos enviado un correo electrónico al operador. Deberá abrirlo, confirmar su cuenta, crear su contraseña y luego podrá ingresar desde el login principal.
+            </p>
+
+            <div className="mt-8">
+              <button
+                type="button"
+                onClick={() => {
+                  setModalExito(false);
+                  router.refresh();
+                }}
+                className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider hover:bg-slate-800 transition shadow-lg shadow-slate-900/10"
+              >
+                Entendido
+              </button>
+            </div>
           </div>
         </div>
       )}

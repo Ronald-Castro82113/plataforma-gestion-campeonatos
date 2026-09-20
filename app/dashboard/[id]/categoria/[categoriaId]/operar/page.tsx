@@ -833,15 +833,14 @@ export default function MesaControlPage({ params }: { params: Promise<{ id: stri
             <p className="text-xs text-slate-400 font-medium">Gestión en tiempo real con bloqueo automatizado por disciplina.</p>
           </div>
           <div className="bg-white p-1 rounded-xl border border-slate-200 shadow-sm flex gap-1 w-full sm:w-auto">
-            <button onClick={() => setFiltroHoy(true)} className={`flex-1 sm:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition ${filtroHoy ? 'bg-blue-600 text-white' : 'text-slate-500'}`}>
+            <button onClick={() => setFiltroHoy(true)} className={`flex-1 sm:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition ${filtroHoy ? 'bg-emerald-500 text-white' : 'text-slate-500'}`}>
               ⚡ Jornada de Hoy ({partidosDeHoy.length})
             </button>
-            <button onClick={() => setFiltroHoy(false)} className={`flex-1 sm:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition ${!filtroHoy ? 'bg-blue-600 text-white' : 'text-slate-500'}`}>
+            <button onClick={() => setFiltroHoy(false)} className={`flex-1 sm:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition ${!filtroHoy ? 'bg-emerald-500 text-white' : 'text-slate-500'}`}>
               🌐 Fixture Completo
             </button>
           </div>
         </div>
-        <h3 className='text-amber-700'>PROBAR OPERAR PARTIDSOS COMO ROL ROL OPERADOR</h3>
         {filtroHoy ? (
           <div className="space-y-6">
             {partidoEstrella ? (

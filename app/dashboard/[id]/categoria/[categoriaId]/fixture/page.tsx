@@ -405,7 +405,7 @@ export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id:
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-8">
         <div className="mb-8 border-b border-slate-200 pb-6">
-          <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Panel Maestro Unificado</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-blue-900">Panel Maestro Unificado</span>
           <h2 className="text-3xl font-extrabold text-slate-900 mt-1">Estructura & Calendario Flexible de Juego</h2>
           <p className="text-sm text-slate-500 mt-1">Configura fases de grupos, ligas o playoffs con total adaptabilidad a las reglas de tu torneo.</p>
         </div>
@@ -455,7 +455,7 @@ export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id:
                     </div>
                   )}
 
-                  <button type="submit" disabled={btnLoading} className="w-full rounded-xl bg-blue-600 py-2 text-xs font-bold text-white hover:bg-blue-700 transition">
+                  <button type="submit" disabled={btnLoading} className="w-full rounded-xl bg-cyan-900 py-2 text-xs font-bold text-white hover:bg-cyan-700 transition">
                     Establecer Formato
                   </button>
                 </form>

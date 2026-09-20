@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import VistaPublicaTorneoPage from './[id]/page'; // Tu vista detallada del torneo
 import VistaPublicaHome from './campeonato/page'; // Tu carrusel y buscador de campeonatos
+import InstalarApp from './InstalarApp';
 
 function PortalContenido() {
   const searchParams = useSearchParams();
@@ -98,6 +99,7 @@ function PortalContenido() {
 
         {/* Contenido del carrusel */}
         <main className="flex-1">
+          <InstalarApp />
           <VistaPublicaHome />
         </main>
       </div>

@@ -40,9 +40,27 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // 2. Bloquear acceso al panel de Super Admin (/super-admin) sin sesión (excluyendo su login)
-  if (path.startsWith('/super-admin') && path !== '/super-admin/login' && !user) {
-    return NextResponse.redirect(new URL('/super-admin/login', request.url));
+  // 2. Proteger el panel de Super Admin
+  if (path.startsWith('/super-admin') && path !== '/super-admin/login') {
+    // Si no hay sesión, enviar al login de Super Admin
+    if (!user) {
+      return NextResponse.redirect(
+        new URL('/super-admin/login', request.url)
+      );
+    }
+
+    // Si hay sesión, verificar que realmente sea Super Admin
+    const { data: perfilSuperAdmin } = await supabase
+      .from('perfiles_usuarios')
+      .select('rol')
+      .eq('id', user.id)
+      .single();
+
+    if (perfilSuperAdmin?.rol !== 'super_admin') {
+      return NextResponse.redirect(
+        new URL('/dashboard', request.url)
+      );
+    }
   }
 
   // 3. Bloquear páginas de login si ya hay sesión activa
@@ -51,7 +69,17 @@ export async function proxy(request: NextRequest) {
   }
 
   if (path === '/super-admin/login' && user) {
-    return NextResponse.redirect(new URL('/super-admin', request.url));
+    const { data: perfilSuperAdmin } = await supabase
+      .from('perfiles_usuarios')
+      .select('rol')
+      .eq('id', user.id)
+      .single();
+
+    if (perfilSuperAdmin?.rol === 'super_admin') {
+      return NextResponse.redirect(
+        new URL('/super-admin', request.url)
+      );
+    }
   }
 
   // Control estricto de rutas para el operador
@@ -64,10 +92,14 @@ export async function proxy(request: NextRequest) {
 
     if (perfil?.rol === 'operador') {
       const esHubOperador = path === '/dashboard/operador';
+      const esCampeonatoOperador = /^\/dashboard\/operador\/[^/]+$/.test(path);
       const esMesaOperar = path.includes('/operar');
 
-      // Si el operador intenta entrar a otro lado que no sea su hub o su mesa, lo mandamos al hub
-      if (!esHubOperador && !esMesaOperar) {
+      // El operador puede acceder únicamente a:
+      // 1. Su centro de operaciones
+      // 2. Las categorías de un campeonato que tenga asignado
+      // 3. Las mesas de operación
+      if (!esHubOperador && !esCampeonatoOperador && !esMesaOperar) {
         return NextResponse.redirect(new URL('/dashboard/operador', request.url));
       }
     }

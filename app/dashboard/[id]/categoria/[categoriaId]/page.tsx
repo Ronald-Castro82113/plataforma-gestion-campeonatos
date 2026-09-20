@@ -127,7 +127,7 @@ export default function GestionEquiposPage({
         {/* Cabecera Limpia */}
         <div className="mb-8 border-b border-slate-200 pb-6 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Inscripciones abiertas</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-blue-900">Inscripciones abiertas</span>
             <h2 className="text-3xl font-extrabold text-slate-900 mt-1">
               Categoría: {categoria?.nombre_categoria}
             </h2>
@@ -161,7 +161,7 @@ export default function GestionEquiposPage({
                 <input
                   type="text"
                   required
-                  placeholder="Ej. Ebenezer F.C."
+                  placeholder="Ej. Casmi F.C."
                   className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
                   value={nuevoNombreEquipo}
                   onChange={(e) => setNuevoNombreEquipo(e.target.value)}
@@ -170,7 +170,7 @@ export default function GestionEquiposPage({
               <button
                 type="submit"
                 disabled={btnLoading}
-                className="w-full rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                className="w-full rounded-xl bg-cyan-900 py-2.5 text-xs font-bold text-white transition hover:bg-cyan-700 disabled:opacity-50"
               >
                 {btnLoading ? 'Inscribiendo...' : '⚽ Registrar Equipo'}
               </button>
@@ -198,7 +198,7 @@ export default function GestionEquiposPage({
                       <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-100">
                         <svg 
                           viewBox="0 0 24 24" 
-                          className="w-6 h-6 text-blue-600" 
+                          className="w-6 h-6 text-emerald-600" 
                           fill="currentColor" 
                           stroke="none" 
                           strokeWidth="2" 
