@@ -76,11 +76,15 @@ export default function Home() {
 
           
           <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            ¡Todo listo!
+            ¡Hola!
           </h2>
-          <p className="text-slate-500 mt-3 max-w-sm">
+          {/* <p className="text-slate-500 mt-3 max-w-sm">
             Tu correo ha sido verificado con éxito. Ahora estás registrado a <span className="font-bold text-slate-900">Casmi Sports</span>.
+          </p> */}
+          <p className="text-slate-500 mt-3 max-w-sm">
+            Bienvenido a <span className="font-bold text-slate-900">Casmi Sports</span>.
           </p>
+          <a href="/login" className="mt-8 inline-flex items-center justify-center rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-slate-700 hover:shadow-lg" > Iniciar sesión </a>
         </div>
 
       </main>
