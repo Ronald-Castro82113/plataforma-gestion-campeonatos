@@ -9,6 +9,7 @@ interface Fase {
   id: string;
   nombre_fase: string;
   tipo_formato: string;
+  modo_organizacion: 'automatico' | 'manual';
 }
 
 interface Grupo {
@@ -24,6 +25,7 @@ interface Equipo {
 interface EquipoEnGrupo {
   id: string;
   grupo_id: string;
+  orden_sorteo: number | null;
   equipos: {
     id: string;
     nombre_equipo: string;
@@ -68,6 +70,9 @@ export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id:
   const [formato, setFormato] = useState('grupos');
   const [tipoRondaPlayoff, setTipoRondaPlayoff] = useState<'8' | '4' | '2' | '1'>('2');
 
+   // Modo de organización del torneo
+  const [modoOrganizacion, setModoOrganizacion] = useState<'seleccion' | 'automatico' | 'manual'>('seleccion');
+
   // Sorteo Cabezas de Serie
   const [campeonId, setCampeonId] = useState('');
   const [vicecampeonId, setVicecampeonId] = useState('');
@@ -77,14 +82,26 @@ export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id:
 
   // Estado para alertas modernas
   const [mensajeAlerta, setMensajeAlerta] = useState<string | null>(null);
+  
+  const [nombreNuevoGrupo, setNombreNuevoGrupo] = useState('');
+  const [equipoSeleccionadoPorGrupo, setEquipoSeleccionadoPorGrupo] = useState<Record<string, string>>({});
+
+  const [fechaManual, setFechaManual] = useState('1');
+  const [localManual, setLocalManual] = useState('');
+  const [visitaManual, setVisitaManual] = useState('');
+  const [grupoFixtureManual, setGrupoFixtureManual] = useState('');
 
   const refrescarTodoElTorneo = async () => {
     try {
       const { data: fasesData } = await supabase
         .from('fases')
-        .select('id, nombre_fase, tipo_formato')
+        .select('id, nombre_fase, tipo_formato, modo_organizacion')
         .eq('categoria_id', categoriaId);
       setFases(fasesData || []);
+
+      if (fasesData && fasesData.length > 0) {
+        setModoOrganizacion(fasesData[0].modo_organizacion);
+      }
 
       const { data: eqData } = await supabase
         .from('equipos')
@@ -106,7 +123,7 @@ export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id:
           const listaIds = gruposData.map((g: Grupo) => g.id);
           const { data: relData } = await supabase
             .from('grupos_equipos')
-            .select('id, grupo_id, equipos:equipo_id (id, nombre_equipo)')
+            .select('id, grupo_id, orden_sorteo, equipos:equipo_id (id, nombre_equipo)')
             .in('grupo_id', listaIds);
           setRelacionesGrupos((relData as unknown as EquipoEnGrupo[]) || []);
         }
@@ -134,21 +151,23 @@ export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id:
     cargarDatosIniciales();
   }, [categoriaId]);
 
-  const guardarEstructuraYCrearGrupos = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!nombreFase.trim()) return;
+  const guardarEstructuraYCrearGrupos = async () => {
+    if (!nombreFase.trim()) {
+      setMensajeAlerta('Debes indicar el nombre de la etapa.');
+      return;
+    }
 
     setBtnLoading(true);
     try {
       const { data: nuevaFase, error: errFase } = await supabase
         .from('fases')
-        .insert([{ categoria_id: categoriaId, nombre_fase: nombreFase.trim(), tipo_formato: formato }])
+        .insert([{ categoria_id: categoriaId, nombre_fase: nombreFase.trim(), tipo_formato: formato, modo_organizacion: modoOrganizacion }])
         .select()
         .single();
 
       if (errFase) throw errFase;
 
-      if (formato === 'grupos' && nuevaFase) {
+      if (formato === 'grupos' && nuevaFase && modoOrganizacion === 'automatico') {
         await supabase.from('grupos').insert([
           { fase_id: nuevaFase.id, nombre_grupo: 'Grupo A' },
           { fase_id: nuevaFase.id, nombre_grupo: 'Grupo B' }
@@ -160,6 +179,253 @@ export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id:
     } catch (error: unknown) {
       console.error(error);
       setMensajeAlerta('Error definiendo el sistema de juego.');
+    } finally {
+      setBtnLoading(false);
+    }
+  };
+
+  const agregarGrupoManual = async () => {
+    const nombre = nombreNuevoGrupo.trim();
+
+    if (!nombre) {
+      setMensajeAlerta('Debes indicar el nombre del grupo.');
+      return;
+    }
+
+    if (fases.length === 0) {
+      setMensajeAlerta('Primero debes crear la fase del torneo.');
+      return;
+    }
+
+    const faseActiva = fases[0];
+
+    if (faseActiva.modo_organizacion !== 'manual') {
+      setMensajeAlerta('Esta fase no está configurada para organización manual.');
+      return;
+    }
+
+    setBtnLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('grupos')
+        .insert([{
+          fase_id: faseActiva.id,
+          nombre_grupo: nombre
+        }]);
+
+      if (error) throw error;
+
+      setNombreNuevoGrupo('');
+
+      await refrescarTodoElTorneo();
+
+      setMensajeAlerta(`Grupo "${nombre}" creado correctamente.`);
+    } catch (error: unknown) {
+      console.error(error);
+      setMensajeAlerta('No se pudo crear el grupo.');
+    } finally {
+      setBtnLoading(false);
+    }
+  };
+
+  const agregarEquipoAlGrupoManual = async (grupoId: string) => {
+    const equipoId = equipoSeleccionadoPorGrupo[grupoId];
+
+    if (!equipoId) {
+      setMensajeAlerta('Selecciona un equipo antes de agregarlo al grupo.');
+      return;
+    }
+
+    const yaEstaAsignado = relacionesGrupos.some(
+      (relacion: EquipoEnGrupo) => relacion.equipos?.id === equipoId
+    );
+
+    if (yaEstaAsignado) {
+      setMensajeAlerta('Ese equipo ya está asignado a un grupo.');
+      return;
+    }
+
+    setBtnLoading(true);
+
+    try {
+      const equiposDelGrupo = relacionesGrupos.filter(
+        (relacion: EquipoEnGrupo) => relacion.grupo_id === grupoId
+      );
+
+      const siguienteOrdenSorteo =
+        equiposDelGrupo.reduce(
+          (maximo, relacion) =>
+            Math.max(maximo, relacion.orden_sorteo ?? 0),
+          0
+        ) + 1;
+
+      const { error } = await supabase
+        .from('grupos_equipos')
+        .insert([
+          {
+            grupo_id: grupoId,
+            equipo_id: equipoId,
+            orden_sorteo: siguienteOrdenSorteo
+          }
+        ]);
+
+      if (error) throw error;
+
+      setEquipoSeleccionadoPorGrupo((actual) => ({
+        ...actual,
+        [grupoId]: ''
+      }));
+
+      await refrescarTodoElTorneo();
+
+    } catch (error: unknown) {
+      console.error(error);
+      setMensajeAlerta('No se pudo agregar el equipo al grupo.');
+    } finally {
+      setBtnLoading(false);
+    }
+  };
+
+  const agregarPartidoManual = async () => {
+    if (fases.length === 0) {
+      setMensajeAlerta('Primero debes crear la fase del torneo.');
+      return;
+    }
+
+    if (!grupoFixtureManual) {
+      setMensajeAlerta('Selecciona el grupo del partido.');
+      return;
+    }
+
+    if (!localManual || !visitaManual) {
+      setMensajeAlerta('Selecciona los dos equipos del partido.');
+      return;
+    }
+
+    if (localManual === visitaManual) {
+      setMensajeAlerta('Un equipo no puede jugar contra sí mismo.');
+      return;
+    }
+
+    const equiposDelGrupo = relacionesGrupos.filter(
+      (relacion: EquipoEnGrupo) => relacion.grupo_id === grupoFixtureManual
+    );
+
+    const pertenecenAlGrupo = equiposDelGrupo.some(
+      (relacion: EquipoEnGrupo) => relacion.equipos?.id === localManual
+    ) && equiposDelGrupo.some(
+      (relacion: EquipoEnGrupo) => relacion.equipos?.id === visitaManual
+    );
+
+    if (!pertenecenAlGrupo) {
+      setMensajeAlerta('Los dos equipos deben pertenecer al grupo seleccionado.');
+      return;
+    }
+
+    const existePartido = partidos.some(
+      (partido: Partido) =>
+        String(partido.numero_fecha) === fechaManual &&
+        (
+          (
+            partido.equipo_local?.id === localManual &&
+            partido.equipo_visita?.id === visitaManual
+          ) ||
+          (
+            partido.equipo_local?.id === visitaManual &&
+            partido.equipo_visita?.id === localManual
+          )
+        )
+    );
+
+    if (existePartido) {
+      setMensajeAlerta('Ese partido ya existe en esa fecha.');
+      return;
+    }
+
+    setBtnLoading(true);
+
+    try {
+      const siguienteOrden =
+        partidos.reduce(
+          (maximo, partido) =>
+            Math.max(maximo, partido.orden || 0),
+          0
+        ) + 1;
+
+      const { error } = await supabase
+        .from('partidos')
+        .insert([
+          {
+            fase_id: fases[0].id,
+            grupo_id: grupoFixtureManual,
+            equipo_local_id: localManual,
+            equipo_visita_id: visitaManual,
+            numero_fecha: fechaManual,
+            orden: siguienteOrden,
+            estado: 'programado',
+            lugar: 'Cancha Central Principal'
+          }
+        ]);
+
+      if (error) throw error;
+
+      setLocalManual('');
+      setVisitaManual('');
+
+      await refrescarTodoElTorneo();
+
+    } catch (error: unknown) {
+      console.error(error);
+      setMensajeAlerta('No se pudo guardar el partido.');
+    } finally {
+      setBtnLoading(false);
+    }
+  };
+
+  const eliminarPartidoManual = async (partidoId: string) => {
+    const partido = partidos.find(
+      (item: Partido) => item.id === partidoId
+    );
+
+    if (!partido) {
+      setMensajeAlerta('No se encontró el partido.');
+      return;
+    }
+
+    if (partido.estado !== 'programado') {
+      setMensajeAlerta('Este partido ya no puede eliminarse porque no está programado.');
+      return;
+    }
+
+    const confirmar = window.confirm(
+      '¿Seguro que deseas eliminar este partido del fixture?'
+    );
+
+    if (!confirmar) {
+      return;
+    }
+
+    setBtnLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('partidos')
+        .delete()
+        .eq('id', partidoId);
+
+      if (error) {
+        console.error('ERROR AL ELIMINAR PARTIDO:', error);
+        setMensajeAlerta(`Error al eliminar: ${error.message}`);
+        return;
+      }
+
+      await refrescarTodoElTorneo();
+
+      setMensajeAlerta('Partido eliminado correctamente.');
+    } catch (error: unknown) {
+      console.error(error);
+      setMensajeAlerta('No se pudo eliminar el partido.');
     } finally {
       setBtnLoading(false);
     }
@@ -413,64 +679,211 @@ export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id:
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           <div className="space-y-6">
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">1. Sistema de Competición</h3>
-              {fases.length === 0 ? (
-                <form onSubmit={guardarEstructuraYCrearGrupos} className="space-y-4">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Nombre de Etapa</label>
-                    <input
-                      type="text"
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs outline-none"
-                      value={nombreFase}
-                      onChange={(e) => setNombreFase(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Formato Flexible</label>
-                    <select 
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs outline-none font-medium"
-                      value={formato}
-                      onChange={(e) => setFormato(e.target.value)}
-                    >
-                      <option value="grupos">Fase de Grupos (Con cabezas de serie)</option>
-                      {/* <option value="liga">Liga Directa (Todos contra todos)</option>
-                      <option value="eliminacion">Eliminación Directa (Playoffs)</option> */}
-                    </select>
-                  </div>
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+              <div className="mb-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-700 text-sm font-bold">
+                    1
+                  </span>
+                  <h3 className="text-sm font-extrabold text-slate-900">
+                    Sistema de Competición
+                  </h3>
+                </div>
 
-                  {formato === 'eliminacion' && (
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">Instancia Inicial de Playoffs</label>
-                      <select 
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs outline-none font-medium"
-                        value={tipoRondaPlayoff}
-                        onChange={(e) => setTipoRondaPlayoff(e.target.value as '8' | '4' | '2' | '1')}
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Elige cómo deseas organizar los grupos y construir el calendario
+                  de partidos.
+                </p>
+              </div>
+
+              {fases.length === 0 ? (
+                <div className="space-y-4">
+
+                  {/* OPCIÓN AUTOMÁTICA */}
+                  <button
+                    type="button"
+                    onClick={() => setModoOrganizacion('automatico')}
+                    className={`w-full text-left rounded-2xl border-2 p-5 transition-all duration-200 ${
+                      modoOrganizacion === 'automatico'
+                        ? 'border-blue-500 bg-blue-50 shadow-md shadow-blue-500/10'
+                        : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div
+                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl ${
+                          modoOrganizacion === 'automatico'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-blue-100 text-blue-700'
+                        }`}
                       >
-                        <option value="8">Octavos de Final (16 equipos - 8 llaves)</option>
-                        <option value="4">Cuartos de Final (8 equipos - 4 llaves)</option>
-                        <option value="2">Semifinales (4 equipos - 2 llaves)</option>
-                        <option value="1">Final Única (2 equipos - 1 llave)</option>
-                      </select>
+                        🪄
+                      </div>
+
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between gap-3">
+                          <h4 className="text-sm font-extrabold text-slate-900">
+                            Automático
+                          </h4>
+
+                          {modoOrganizacion === 'automatico' && (
+                            <span className="rounded-full bg-blue-600 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">
+                              Seleccionado
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                          El sistema realiza la distribución de los equipos y genera
+                          automáticamente el fixture.
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* OPCIÓN MANUAL */}
+                  <button
+                    type="button"
+                    onClick={() => setModoOrganizacion('manual')}
+                    className={`w-full text-left rounded-2xl border-2 p-5 transition-all duration-200 ${
+                      modoOrganizacion === 'manual'
+                        ? 'border-emerald-500 bg-emerald-50 shadow-md shadow-emerald-500/10'
+                        : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div
+                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl ${
+                          modoOrganizacion === 'manual'
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-emerald-100 text-emerald-700'
+                        }`}
+                      >
+                        🎲
+                      </div>
+
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between gap-3">
+                          <h4 className="text-sm font-extrabold text-slate-900">
+                            Sorteo Manual
+                          </h4>
+
+                          {modoOrganizacion === 'manual' && (
+                            <span className="rounded-full bg-emerald-600 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">
+                              Seleccionado
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                          Organiza los grupos y construye el fixture exactamente
+                          como se realizó el sorteo presencial.
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* CONFIGURACIÓN DEL FORMATO */}
+                  {modoOrganizacion !== 'seleccion' && (
+                    <div className="border-t border-slate-100 pt-5 mt-2 space-y-4">
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          Nombre de Etapa
+                        </label>
+
+                        <input
+                          type="text"
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                          value={nombreFase}
+                          onChange={(e) => setNombreFase(e.target.value)}
+                          placeholder="Ej. Primera Etapa"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          Formato de Competición
+                        </label>
+
+                        <select
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 font-medium"
+                          value={formato}
+                          onChange={(e) => setFormato(e.target.value)}
+                        >
+                          <option value="grupos">
+                            Fase de Grupos
+                          </option>
+                        </select>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={guardarEstructuraYCrearGrupos}
+                        disabled={btnLoading}
+                        className="w-full rounded-xl bg-cyan-900 py-3 text-xs font-bold text-white hover:bg-cyan-700 transition disabled:opacity-50"
+                      >
+                        {btnLoading
+                          ? 'Guardando configuración...'
+                          : modoOrganizacion === 'manual'
+                            ? ' Crear Configuración Manual'
+                            : ' Establecer Formato Automático'}
+                      </button>
+
                     </div>
                   )}
-
-                  <button type="submit" disabled={btnLoading} className="w-full rounded-xl bg-cyan-900 py-2 text-xs font-bold text-white hover:bg-cyan-700 transition">
-                    Establecer Formato
-                  </button>
-                </form>
-              ) : (
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex justify-between items-center">
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">{fases[0].nombre_fase}</h4>
-                    <p className="text-[10px] text-slate-400 uppercase font-mono font-bold mt-0.5">{fases[0].tipo_formato}</p>
-                  </div>
-                  <span className="text-emerald-600 text-xs font-bold bg-emerald-50 px-2 py-0.5 rounded-full">Activo</span>
                 </div>
+              ) : (
+                  <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className="text-sm font-extrabold text-slate-900">
+                          {fases[0].nombre_fase}
+                        </h4>
+
+                        <p className="text-[10px] text-slate-400 uppercase font-mono font-bold mt-1">
+                          {fases[0].tipo_formato}
+                        </p>
+                      </div>
+
+                      <span className="text-emerald-600 text-xs font-bold bg-emerald-50 px-3 py-1 rounded-full">
+                        Activo
+                      </span>
+                    </div>
+
+                    <div
+                      className={`rounded-xl border p-3 ${
+                        fases[0].modo_organizacion === 'manual'
+                          ? 'border-emerald-200 bg-emerald-50'
+                          : 'border-blue-200 bg-blue-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="text-xl">
+                          {fases[0].modo_organizacion === 'manual' ? '🎲' : '🪄'}
+                        </div>
+
+                        <div>
+                          <p className="text-xs font-extrabold text-slate-900">
+                            {fases[0].modo_organizacion === 'manual'
+                              ? 'Sorteo Manual'
+                              : 'Organización Automática'}
+                          </p>
+
+                          <p className="text-[10px] text-slate-500 mt-0.5">
+                            {fases[0].modo_organizacion === 'manual'
+                              ? 'Los grupos y el fixture serán organizados manualmente.'
+                              : 'El sistema distribuirá los equipos y generará el fixture automáticamente.'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
               )}
             </div>
 
-            {fases.length > 0 && fases[0].tipo_formato === 'grupos' && (
+            {fases.length > 0 && fases[0].tipo_formato === 'grupos' && modoOrganizacion === 'automatico' && (
               <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">2. Bombos y Cabezas de Serie</h3>
                 <div>
@@ -498,7 +911,309 @@ export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id:
               </div>
             )}
 
-            {fases.length > 0 && (
+            {fases.length > 0 &&
+              fases[0].tipo_formato === 'grupos' &&
+              modoOrganizacion === 'manual' && (
+                <div className="bg-white border border-emerald-200 rounded-2xl p-6 shadow-sm space-y-5">
+
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+                      2. Configuración del Sorteo Manual
+                    </h3>
+
+                    <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                      Crea los grupos exactamente como fueron definidos en el sorteo
+                      presencial. Luego podrás colocar los equipos dentro de cada grupo.
+                    </p>
+                  </div>
+
+                  {/* CREAR GRUPO */}
+                  <div className="border-t border-slate-100 pt-4">
+
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                      Nombre del nuevo grupo
+                    </label>
+
+                    <div className="flex gap-2">
+
+                      <input
+                        type="text"
+                        value={nombreNuevoGrupo}
+                        onChange={(e) => setNombreNuevoGrupo(e.target.value)}
+                        placeholder={`Ej. Grupo ${String.fromCharCode(65 + grupos.length)}`}
+                        className="flex-1 rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={agregarGrupoManual}
+                        disabled={btnLoading}
+                        className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition disabled:opacity-50"
+                      >
+                        + Crear Grupo
+                      </button>
+
+                    </div>
+                  </div>
+
+                  {/* GRUPOS EXISTENTES */}
+                  <div className="border-t border-slate-100 pt-4">
+
+                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">
+                      Grupos creados
+                    </h4>
+
+                    {grupos.length === 0 ? (
+                      <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center">
+                        <p className="text-xs text-slate-400">
+                          Todavía no has creado ningún grupo.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+
+                        {grupos.map((grupo: Grupo) => {
+                          const equiposDelGrupo = relacionesGrupos.filter(
+                            (relacion: EquipoEnGrupo) => relacion.grupo_id === grupo.id
+                          );
+
+                          return (
+                            <div
+                              key={grupo.id}
+                              className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-xs font-extrabold text-slate-800">
+                                    {grupo.nombre_grupo}
+                                  </p>
+
+                                  <p className="text-[10px] text-slate-400 mt-0.5">
+                                    {equiposDelGrupo.length} equipos asignados
+                                  </p>
+                                </div>
+
+                                <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold text-emerald-700">
+                                  Manual
+                                </span>
+                              </div>
+
+                              {/* EQUIPOS DEL GRUPO */}
+                              {equiposDelGrupo.length > 0 && (
+                                <div className="space-y-1.5">
+                                  {equiposDelGrupo.map((relacion: EquipoEnGrupo, index: number) => (
+                                    <div
+                                      key={relacion.id}
+                                      className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2"
+                                    >
+                                      <span className="w-5 h-5 flex items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-[9px] font-bold">
+                                        {index + 1}
+                                      </span>
+
+                                      <span className="text-xs font-medium text-slate-700">
+                                        {relacion.equipos?.nombre_equipo}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* SELECTOR DE EQUIPO */}
+                              <div className="flex gap-2 pt-1">
+
+                                <select
+                                  className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                                  value={equipoSeleccionadoPorGrupo[grupo.id] || ''}
+                                  onChange={(e) =>
+                                    setEquipoSeleccionadoPorGrupo((actual) => ({
+                                      ...actual,
+                                      [grupo.id]: e.target.value
+                                    }))
+                                  }
+                                >
+                                  <option value="">
+                                    + Seleccionar equipo
+                                  </option>
+
+                                  {equiposTotales
+                                    .filter(
+                                      (equipo: Equipo) =>
+                                        !relacionesGrupos.some(
+                                          (relacion: EquipoEnGrupo) =>
+                                            relacion.equipos?.id === equipo.id
+                                        )
+                                    )
+                                    .map((equipo: Equipo) => (
+                                      <option key={equipo.id} value={equipo.id}>
+                                        {equipo.nombre_equipo}
+                                      </option>
+                                    ))}
+                                </select>
+
+                                <button
+                                  type="button"
+                                  onClick={() => agregarEquipoAlGrupoManual(grupo.id)}
+                                  disabled={btnLoading}
+                                  className="rounded-lg bg-emerald-600 px-3 py-2 text-[11px] font-bold text-white hover:bg-emerald-700 transition disabled:opacity-50"
+                                >
+                                  + Agregar
+                                </button>
+
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                      </div>
+                    )}
+
+                  </div>
+
+                </div>
+              )}  
+
+            {fases.length > 0 &&
+              fases[0].tipo_formato === 'grupos' &&
+              modoOrganizacion === 'manual' &&
+              grupos.length > 0 &&
+              relacionesGrupos.length > 0 && (
+                <div className="bg-white border border-emerald-200 rounded-2xl p-6 shadow-sm space-y-5">
+
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+                      3. Construir Fixture Manual
+                    </h3>
+
+                    <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                      Construye cada partido según el orden definido en el sorteo
+                      presencial. Puedes decidir libremente qué equipos se enfrentan
+                      en cada fecha.
+                    </p>
+                  </div>
+
+                  {/* GRUPO */}
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                      Grupo
+                    </label>
+
+                    <select
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs"
+                      value={grupoFixtureManual}
+                      onChange={(e) => {
+                        setGrupoFixtureManual(e.target.value);
+                        setLocalManual('');
+                        setVisitaManual('');
+                      }}
+                    >
+                      <option value="">
+                        -- Selecciona un grupo --
+                      </option>
+
+                      {grupos.map((grupo: Grupo) => (
+                        <option key={grupo.id} value={grupo.id}>
+                          {grupo.nombre_grupo}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* FECHA */}
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                      Fecha / Jornada
+                    </label>
+
+                    <input
+                      type="number"
+                      min="1"
+                      value={fechaManual}
+                      onChange={(e) => setFechaManual(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs"
+                    />
+                  </div>
+
+                  {/* EQUIPOS */}
+                  {grupoFixtureManual && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                          Equipo Local
+                        </label>
+
+                        <select
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs"
+                          value={localManual}
+                          onChange={(e) => setLocalManual(e.target.value)}
+                        >
+                          <option value="">
+                            -- Local --
+                          </option>
+
+                          {relacionesGrupos
+                            .filter(
+                              (relacion: EquipoEnGrupo) =>
+                                relacion.grupo_id === grupoFixtureManual
+                            )
+                            .map((relacion: EquipoEnGrupo) => (
+                              <option
+                                key={relacion.equipos?.id}
+                                value={relacion.equipos?.id || ''}
+                              >
+                                {relacion.equipos?.nombre_equipo}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                          Equipo Visitante
+                        </label>
+
+                        <select
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs"
+                          value={visitaManual}
+                          onChange={(e) => setVisitaManual(e.target.value)}
+                        >
+                          <option value="">
+                            -- Visitante --
+                          </option>
+
+                          {relacionesGrupos
+                            .filter(
+                              (relacion: EquipoEnGrupo) =>
+                                relacion.grupo_id === grupoFixtureManual &&
+                                relacion.equipos?.id !== localManual
+                            )
+                            .map((relacion: EquipoEnGrupo) => (
+                              <option
+                                key={relacion.equipos?.id}
+                                value={relacion.equipos?.id || ''}
+                              >
+                                {relacion.equipos?.nombre_equipo}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={agregarPartidoManual}
+                    disabled={btnLoading}
+                    className="w-full rounded-xl bg-emerald-600 py-3 text-xs font-bold text-white hover:bg-emerald-700 transition disabled:opacity-50"
+                  >
+                    {btnLoading ? 'Guardando partido...' : '+ Agregar partido al fixture'}
+                  </button>
+
+                </div>
+              )}  
+
+            {fases.length > 0 && modoOrganizacion === 'automatico' && (
               <button
                 onClick={ejecutarSorteoYCalendario}
                 disabled={btnLoading}
@@ -560,7 +1275,23 @@ export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id:
                         </span>
                         <span className="w-1/2 text-left truncate">{p.equipo_visita?.nombre_equipo}</span>
                       </div>
-                      <span className="text-[10px] uppercase font-bold text-slate-400">{p.estado}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] uppercase font-bold text-slate-400">
+                          {p.estado}
+                        </span>
+
+                        {modoOrganizacion === 'manual' && p.estado === 'programado' && (
+                          <button
+                            type="button"
+                            onClick={() => eliminarPartidoManual(p.id)}
+                            disabled={btnLoading}
+                            className="text-red-500 hover:text-red-700 font-bold px-2 py-1 rounded-lg hover:bg-red-50 transition"
+                            title="Eliminar partido"
+                          >
+                            🗑️
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
