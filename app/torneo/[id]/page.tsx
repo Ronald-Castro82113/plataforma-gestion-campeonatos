@@ -1157,7 +1157,7 @@ export default function VistaPublicaTorneoPage({ params }: { params: Promise<{ i
                           </div>
                           <div className="space-y-1">
                             <p className="text-xs font-bold text-slate-300">El reproductor en vivo se conectará automáticamente durante las jornadas.</p>
-                            <p className="text-[10px] text-slate-500">(Compatible con Facebook Live, YouTube y OBS Studio)</p>
+                            {/* <p className="text-[10px] text-slate-500">(Compatible con Facebook Live, YouTube y OBS Studio)</p> */}
                           </div>
                         </div>
                       )}
