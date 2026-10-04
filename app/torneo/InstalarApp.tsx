@@ -1,27 +1,33 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useInstall } from '@/components/InstallProvider';
+import { useSyncExternalStore } from 'react';
+import { useInstall } from '../components/InstallProvider';
+
+const noSuscribir = () => () => {};
+
+function useEsIOS() {
+  return useSyncExternalStore(
+    noSuscribir,
+    () => /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase()),
+    () => false
+  );
+}
+
+function useYaInstalada() {
+  return useSyncExternalStore(
+    noSuscribir,
+    () =>
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as Navigator & { standalone?: boolean })
+        .standalone === true,
+    () => false
+  );
+}
 
 export default function InstalarApp() {
   const { canInstall, install } = useInstall();
-
-  const [esIOS, setEsIOS] = useState(false);
-  const [yaInstalada, setYaInstalada] = useState(false);
-
-  useEffect(() => {
-    const navegador = window.navigator.userAgent.toLowerCase();
-    const ios = /iphone|ipad|ipod/.test(navegador);
-
-    const instalada =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      ('standalone' in window.navigator &&
-        (window.navigator as Navigator & { standalone?: boolean })
-          .standalone === true);
-
-    setEsIOS(ios);
-    setYaInstalada(instalada);
-  }, []);
+  const esIOS = useEsIOS();
+  const yaInstalada = useYaInstalada();
 
   if (yaInstalada) {
     return null;
