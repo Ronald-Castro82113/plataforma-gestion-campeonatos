@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'Casmi Sports',
     short_name: 'Casmi Sports',
     description: 'Portal público de campeonatos deportivos',
-    start_url: '/torneo',
+    start_url: '/torneo/',
     scope: '/torneo/',
     display: 'standalone',
     background_color: '#020617',
