@@ -1076,11 +1076,12 @@ export default function VistaPublicaTorneoPage({ params }: { params: Promise<{ i
                       </h2>
                     </div>
 
+                    {/* <h3>NOTA: POR INCONVENIENTES DE CONECTIVIDAD A INTERNET</h3> */}
                     {/* Contenedor con ID */}
                     <div id="contenedor-streaming" className="aspect-video w-full bg-slate-950 rounded-xl border border-slate-800 flex flex-col items-center justify-center relative overflow-hidden">
                       
                       {/* Aviso flotante centrado en medio de la pantalla */}
-                      <div id="aviso-rotacion" className="absolute inset-0 z-50 hidden flex items-center justify-center pointer-events-none px-4 transition-all duration-500">
+                      {/* <div id="aviso-rotacion" className="absolute inset-0 z-50 hidden flex items-center justify-center pointer-events-none px-4 transition-all duration-500">
                         <div className="bg-black/90 text-white px-4 py-3 rounded-xl backdrop-blur-md border border-white/20 flex items-center gap-3 shadow-2xl scale-105 animate-bounce">
                           <svg className="w-7 h-7 text-green-400 animate-spin shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ animationDuration: '4s' }}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
@@ -1090,7 +1091,7 @@ export default function VistaPublicaTorneoPage({ params }: { params: Promise<{ i
                             <p className="text-[10px] text-slate-300">Activa la rotación automática para verlo en grande</p>
                           </div>
                         </div>
-                      </div>
+                      </div> */}
 
                       {urlTransmision ? (
                         <>
