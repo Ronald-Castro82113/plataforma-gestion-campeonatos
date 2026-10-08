@@ -19,6 +19,7 @@ interface Campeonato {
   titulo?: string;
   anio?: number;
   destacado_principal?: boolean;
+  visible_publico?: boolean;
   [key: string]: string | number | boolean | undefined | null;
 }
 
@@ -175,6 +176,51 @@ export default function SuperAdminPage() {
       setTimeout(() => setToastVisible(false), 3500);
     } catch (error) {
       if (error instanceof Error) alert(`Error al actualizar destacado: ${error.message}`);
+    }
+  };
+
+  const cambiarVisibilidadPublica = async (
+    campeonatoId: string,
+    visibleActual: boolean
+  ) => {
+    try {
+      const { error } = await supabase
+        .from('campeonatos')
+        .update({ visible_publico: !visibleActual })
+        .eq('id', campeonatoId);
+
+      if (error) throw error;
+
+      setCampeonatos((actuales) =>
+        actuales.map((camp) => {
+          const cId = camp.id || camp.campeonato_id;
+
+          if (cId === campeonatoId) {
+            return {
+              ...camp,
+              visible_publico: !visibleActual,
+            };
+          }
+
+          return camp;
+        })
+      );
+
+      setToastText(
+        !visibleActual
+          ? '¡Campeonato visible en la vista pública!'
+          : '¡Campeonato ocultado de la vista pública!'
+      );
+
+      setToastVisible(true);
+
+      setTimeout(() => {
+        setToastVisible(false);
+      }, 3500);
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(`Error al cambiar visibilidad: ${error.message}`);
+      }
     }
   };
 
@@ -511,6 +557,7 @@ export default function SuperAdminPage() {
                 const idCamp = c.id || c.campeonato_id || '';
                 const nombreCamp = c.nombre_campeonato || c.nombre || c.titulo || 'Sin nombre';
                 const esPrincipal = c.destacado_principal || false;
+                const esVisiblePublico = c.visible_publico !== false;
 
                 return (
                   <div 
@@ -522,18 +569,33 @@ export default function SuperAdminPage() {
                     }`}
                   >
                     <div className="space-y-2">
-                      <div className="flex justify-between items-start">
-                        <span className="text-xs font-bold text-slate-400">Año: {c.anio || 'N/D'}</span>
-                        {esPrincipal && (
-                          <span className="bg-blue-600 text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
-                            ⭐ Principal Activo
+                      <div className="flex justify-between items-start gap-2">
+                        <span className="text-xs font-bold text-slate-400">
+                          Año: {c.anio || 'N/D'}
+                        </span>
+
+                        <div className="flex gap-1.5 flex-wrap justify-end">
+                          {esPrincipal && (
+                            <span className="bg-blue-600 text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
+                              ⭐ Principal Activo
+                            </span>
+                          )}
+
+                          <span
+                            className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                              esVisiblePublico
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-rose-100 text-rose-700'
+                            }`}
+                          >
+                            {esVisiblePublico ? '👁 Público' : '🚫 Oculto'}
                           </span>
-                        )}
+                        </div>
                       </div>
                       <h3 className="text-base font-bold text-slate-900">{nombreCamp}</h3>
                     </div>
 
-                    <div className="mt-6 pt-4 border-t border-slate-100">
+                    <div className="mt-6 pt-4 border-t border-slate-100 space-y-2">
                       <button
                         onClick={() => asignarPrincipal(idCamp, esPrincipal)}
                         className={`w-full py-2.5 rounded-xl text-xs font-bold transition shadow-sm ${
@@ -542,7 +604,24 @@ export default function SuperAdminPage() {
                             : 'bg-slate-900 text-white hover:bg-slate-800'
                         }`}
                       >
-                        {esPrincipal ? 'Quitar Destacado Principal' : 'Marcar como Principal ⭐'}
+                        {esPrincipal
+                          ? 'Quitar Destacado Principal'
+                          : 'Marcar como Principal ⭐'}
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          cambiarVisibilidadPublica(idCamp, esVisiblePublico)
+                        }
+                        className={`w-full py-2.5 rounded-xl text-xs font-bold transition shadow-sm ${
+                          esVisiblePublico
+                            ? 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
+                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                        }`}
+                      >
+                        {esVisiblePublico
+                          ? '🚫 Ocultar de la Vista Pública'
+                          : '👁 Mostrar en la Vista Pública'}
                       </button>
                     </div>
                   </div>

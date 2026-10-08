@@ -320,8 +320,8 @@ export default function MesaControlPage({ params }: { params: Promise<{ id: stri
     try {
 
       const { data: campData } = await supabase
-        .from('campeonatos') // Cambia por el nombre real de tu tabla si es diferente
-        .select('nombre_campeonato, anio') // Ajusta las columnas según tu base de datos (ej. 'nombre', 'anio' o 'año')
+        .from('campeonatos') 
+        .select('nombre_campeonato, anio') 
         .eq('id', campeonatoId)
         .single();
 
@@ -1172,7 +1172,7 @@ export default function MesaControlPage({ params }: { params: Promise<{ id: stri
                       return (
                         <div key={partido.id} className="bg-white border border-slate-200 p-4 rounded-xl flex flex-col justify-between gap-3 shadow-sm">
                           <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase">
-                            <span>📍Cambiar a nombre del torneo {partido.lugar || 'Principal'}</span>
+                            {/* <span>📍Cambiar a nombre del torneo {partido.lugar || 'Principal'}</span> */}
                             <span className="px-2 py-0.5 bg-slate-100 rounded text-slate-600">{partido.estado}</span>
                           </div>
                           <div className="flex justify-between items-center text-xs font-black text-slate-900">

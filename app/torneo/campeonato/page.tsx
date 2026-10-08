@@ -10,6 +10,7 @@ interface Campeonato {
   anio: number;
   activo: boolean;
   destacado_principal: boolean;
+  visible_publico: boolean;
 }
 
 export default function VistaPublicaHome() {
@@ -24,6 +25,7 @@ export default function VistaPublicaHome() {
         const { data, error } = await supabase
           .from('campeonatos')
           .select('*')
+          .eq('visible_publico', true)
           .order('anio', { ascending: false });
 
         if (data) {
