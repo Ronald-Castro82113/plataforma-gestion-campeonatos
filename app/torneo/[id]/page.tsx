@@ -132,6 +132,19 @@ const obtenerPesoFasePublica = (nombreFecha: string): number => {
 function CarruselPartidos({ partidos, nombreTorneo }: CarruselPartidosProps) {
   const [partidoSeleccionadoModal, setPartidoSeleccionadoModal] = useState<PartidoPublico | null>(null);
 
+    const partidosPorJornada = new Map<string, PartidoPublico[]>();
+
+    partidos.forEach((partido) => {
+      const jornada = partido.numero_fecha || 'Fecha';
+      const grupo = partidosPorJornada.get(jornada);
+
+      if (grupo) {
+        grupo.push(partido);
+      } else {
+        partidosPorJornada.set(jornada, [partido]);
+      }
+    });
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -152,112 +165,128 @@ function CarruselPartidos({ partidos, nombreTorneo }: CarruselPartidosProps) {
           <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">No hay partidos programados todavía en esta categoría.</p>
         </div>
       ) : (
-        <div className="flex overflow-x-auto gap-5 pb-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-900/40">
-          {partidos.map((partido) => {
-            const esVivo = partido.estado === 'en_vivo';
-            const esFin = partido.estado === 'finalizado';
-            const golesLocal = partido.goles_local;
-            const golesVisita = partido.goles_visita;
+        <div className="space-y-8">
+          {Array.from(partidosPorJornada.entries()).map(([jornada, partidosJornada]) => (
+            <section key={jornada} className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-black uppercase tracking-widest text-white">
+                  {/^\d+$/.test(jornada.trim()) ? `Jornada ${jornada}` : jornada}
+                </h3>
 
-            return (
-              <div
-                key={partido.id}
-                className="min-w-[340px] max-w-[340px] shrink-0 snap-center"
-              >
-                <div
-                  className={`relative rounded-2xl border backdrop-blur-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${
-                    esVivo
-                      ? 'bg-gradient-to-br from-emerald-950/50 to-emerald-800 border-emerald-500/50 shadow-lg shadow-red-950/20'
-                      : 'bg-slate-800/90 border-slate-700/80 hover:border-slate-600 shadow-md'
-                  }`}
-                >
-                  {esVivo && (
-                    <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-green-500 to-transparent animate-pulse" />
-                  )}
-
-                  {/* Header de la tarjeta */}
-                  <div className="px-4 py-3 flex justify-between items-center border-b border-slate-700/60">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300">
-                      {partido.numero_fecha || 'Fecha'}
-                    </span>
-                    <span
-                      className={`flex items-center gap-1.5 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-lg shrink-0 ${
-                        esVivo
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                          : esFin
-                          ? 'bg-slate-700/80 text-slate-300 border border-slate-600/50'
-                          : 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
-                      }`}
-                    >
-                      {esVivo && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />}
-                      {esVivo ? 'EN VIVO' : esFin ? 'FINALIZADO' : 'PROGRAMADO'}
-                    </span>
-                  </div>
-
-                  {/* Cuerpo de equipos con más espacio y mejor contraste */}
-                  <div className="p-4 space-y-3">
-                    {/* Equipo Local */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3 min-w-0 pr-2">
-                        <div className="w-8 h-8 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
-                          {partido.equipo_local?.logo_url ? (
-                            <img src={partido.equipo_local.logo_url} className="w-full h-full object-contain p-1" alt="" />
-                          ) : (
-                            <span className="text-xs font-bold text-blue-400">
-                              {partido.equipo_local?.nombre_equipo?.charAt(0) || 'L'}
-                            </span>
-                          )}
-                        </div>
-                        <span className={`text-xs font-bold uppercase truncate ${
-                          esFin && (golesLocal ?? 0) < (golesVisita ?? 0) ? 'text-slate-400' : 'text-white'
-                        }`}>
-                          {partido.equipo_local?.nombre_equipo || 'Por definir'}
-                        </span>
-                      </div>
-                      <span className="font-mono font-black text-sm text-white px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-700/50 min-w-[32px] text-center shadow-sm">
-                        {golesLocal !== null ? golesLocal : '-'}
-                      </span>
-                    </div>
-
-                    {/* Equipo Visita */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3 min-w-0 pr-2">
-                        <div className="w-8 h-8 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
-                          {partido.equipo_visita?.logo_url ? (
-                            <img src={partido.equipo_visita.logo_url} className="w-full h-full object-contain p-1" alt="" />
-                          ) : (
-                            <span className="text-xs font-bold text-purple-400">
-                              {partido.equipo_visita?.nombre_equipo?.charAt(0) || 'V'}
-                            </span>
-                          )}
-                        </div>
-                        <span className={`text-xs font-bold uppercase truncate ${
-                          esFin && (golesVisita ?? 0) < (golesLocal ?? 0) ? 'text-slate-400' : 'text-white'
-                        }`}>
-                          {partido.equipo_visita?.nombre_equipo || 'Por definir'}
-                        </span>
-                      </div>
-                      <span className="font-mono font-black text-sm text-white px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-700/50 min-w-[32px] text-center shadow-sm">
-                        {golesVisita !== null ? golesVisita : '-'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Footer de la tarjeta */}
-                  <div className="border-t border-slate-700/60 px-4 py-2.5 flex items-center justify-between text-[11px] text-slate-300 bg-slate-800/50">
-                    <span className="truncate flex items-center gap-1.5 font-medium">
-                      {/* 📍 {partido.lugar || 'Cancha Central'} */}
-                    </span>
-                    <button 
-                      onClick={() => setPartidoSeleccionadoModal(partido)}
-                      className="text-blue-400 hover:text-blue-300 font-bold transition-colors cursor-pointer">
-                      Detalles
-                    </button>
-                  </div>
-                </div>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                  {partidosJornada.length} {partidosJornada.length === 1 ? 'partido' : 'partidos'}
+                </span>
               </div>
-            );
-          })}
+
+              <div className="flex overflow-x-auto gap-5 pb-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-900/40">
+                {partidosJornada.map((partido) => {
+                  const esVivo = partido.estado === 'en_vivo';
+                  const esFin = partido.estado === 'finalizado';
+                  const golesLocal = partido.goles_local;
+                  const golesVisita = partido.goles_visita;
+
+                  return (
+                    <div
+                      key={partido.id}
+                      className="min-w-[340px] max-w-[340px] shrink-0 snap-center"
+                    >
+                      <div
+                        className={`relative rounded-2xl border backdrop-blur-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${
+                          esVivo
+                            ? 'bg-gradient-to-br from-emerald-950/50 to-emerald-800 border-emerald-500/50 shadow-lg shadow-red-950/20'
+                            : 'bg-slate-800/90 border-slate-700/80 hover:border-slate-600 shadow-md'
+                        }`}
+                      >
+                        {esVivo && (
+                          <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-green-500 to-transparent animate-pulse" />
+                        )}
+
+                        {/* Header de la tarjeta */}
+                        <div className="px-4 py-3 flex justify-between items-center border-b border-slate-700/60">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300">
+                            {partido.numero_fecha || 'Fecha'}
+                          </span>
+                          <span
+                            className={`flex items-center gap-1.5 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-lg shrink-0 ${
+                              esVivo
+                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                : esFin
+                                ? 'bg-slate-700/80 text-slate-300 border border-slate-600/50'
+                                : 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
+                            }`}
+                          >
+                            {esVivo && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />}
+                            {esVivo ? 'EN VIVO' : esFin ? 'FINALIZADO' : 'PROGRAMADO'}
+                          </span>
+                        </div>
+
+                        {/* Cuerpo de equipos con más espacio y mejor contraste */}
+                        <div className="p-4 space-y-3">
+                          {/* Equipo Local */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3 min-w-0 pr-2">
+                              <div className="w-8 h-8 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                                {partido.equipo_local?.logo_url ? (
+                                  <img src={partido.equipo_local.logo_url} className="w-full h-full object-contain p-1" alt="" />
+                                ) : (
+                                  <span className="text-xs font-bold text-blue-400">
+                                    {partido.equipo_local?.nombre_equipo?.charAt(0) || 'L'}
+                                  </span>
+                                )}
+                              </div>
+                              <span className={`text-xs font-bold uppercase truncate ${
+                                esFin && (golesLocal ?? 0) < (golesVisita ?? 0) ? 'text-slate-400' : 'text-white'
+                              }`}>
+                                {partido.equipo_local?.nombre_equipo || 'Por definir'}
+                              </span>
+                            </div>
+                            <span className="font-mono font-black text-sm text-white px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-700/50 min-w-[32px] text-center shadow-sm">
+                              {golesLocal !== null ? golesLocal : '-'}
+                            </span>
+                          </div>
+
+                          {/* Equipo Visita */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3 min-w-0 pr-2">
+                              <div className="w-8 h-8 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                                {partido.equipo_visita?.logo_url ? (
+                                  <img src={partido.equipo_visita.logo_url} className="w-full h-full object-contain p-1" alt="" />
+                                ) : (
+                                  <span className="text-xs font-bold text-purple-400">
+                                    {partido.equipo_visita?.nombre_equipo?.charAt(0) || 'V'}
+                                  </span>
+                                )}
+                              </div>
+                              <span className={`text-xs font-bold uppercase truncate ${
+                                esFin && (golesVisita ?? 0) < (golesLocal ?? 0) ? 'text-slate-400' : 'text-white'
+                              }`}>
+                                {partido.equipo_visita?.nombre_equipo || 'Por definir'}
+                              </span>
+                            </div>
+                            <span className="font-mono font-black text-sm text-white px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-700/50 min-w-[32px] text-center shadow-sm">
+                              {golesVisita !== null ? golesVisita : '-'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Footer de la tarjeta */}
+                        <div className="border-t border-slate-700/60 px-4 py-2.5 flex items-center justify-between text-[11px] text-slate-300 bg-slate-800/50">
+                          <span className="truncate flex items-center gap-1.5 font-medium">
+                            {/* 📍 {partido.lugar || 'Cancha Central'} */}
+                          </span>
+                          <button 
+                            onClick={() => setPartidoSeleccionadoModal(partido)}
+                            className="text-blue-400 hover:text-blue-300 font-bold transition-colors cursor-pointer">
+                            Detalles
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
         </div>
       )}
       {/* Modal de Incidencias del Partido */}
@@ -1076,7 +1105,6 @@ export default function VistaPublicaTorneoPage({ params }: { params: Promise<{ i
                       </h2>
                     </div>
 
-                    {/* <h3>NOTA: POR INCONVENIENTES DE CONECTIVIDAD A INTERNET</h3> */}
                     {/* Contenedor con ID */}
                     <div id="contenedor-streaming" className="aspect-video w-full bg-slate-950 rounded-xl border border-slate-800 flex flex-col items-center justify-center relative overflow-hidden">
                       
@@ -1318,7 +1346,7 @@ export default function VistaPublicaTorneoPage({ params }: { params: Promise<{ i
       </main>
 
       <footer className="mt-24 border-t border-slate-800 text-center py-6 text-xs text-slate-500">
-        Plataforma oficial impulsada por <span className="font-bold text-slate-400">IndorSaaS</span> &copy; {new Date().getFullYear()}
+        Plataforma oficial impulsada por <span className="font-bold text-slate-400">Casmi Sports</span> &copy; {new Date().getFullYear()}
       </footer>
     </div>
   );
