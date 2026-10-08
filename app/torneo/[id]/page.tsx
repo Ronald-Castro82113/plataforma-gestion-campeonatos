@@ -1308,35 +1308,37 @@ export default function VistaPublicaTorneoPage({ params }: { params: Promise<{ i
                   </div>
                 ) : (
                   <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-slate-950 border-b border-slate-800 text-[10px] uppercase font-black text-slate-400">
-                          <th className="py-3 px-6 text-center w-16">Pos</th>
-                          <th className="py-3 px-6">Jugador</th>
-                          <th className="py-3 px-6">Equipo</th>
-                          <th className="py-3 px-6 text-center text-blue-400">Goles</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/60 text-xs font-bold text-slate-200">
-                        {goleadores.map((g, index) => (
-                          <tr key={index} className="hover:bg-slate-800/40 transition">
-                            <td className="py-4 px-6 text-center text-slate-400 font-black">
-                              {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
-                            </td>
-                            <td className="py-4 px-6 uppercase text-white font-black">{g.nombre}</td>
-                            <td className="py-4 px-6 uppercase text-slate-400">
-                              <div className="flex items-center gap-2">
-                                {g.logo && <img src={g.logo} className="w-4 h-4 object-contain" alt="" />}
-                                {g.equipo}
-                              </div>
-                            </td>
-                            <td className="py-4 px-6 text-center text-blue-300 font-black text-base bg-blue-950/20">
-                              {g.goles}
-                            </td>
+                    <div className="w-full overflow-x-auto">
+                      <table className="w-full min-w-[600px] text-left border-collapse">
+                        <thead>
+                          <tr className="bg-slate-950 border-b border-slate-800 text-[10px] uppercase font-black text-slate-400">
+                            <th className="py-3 px-6 text-center w-16">Pos</th>
+                            <th className="py-3 px-6">Jugador</th>
+                            <th className="py-3 px-6">Equipo</th>
+                            <th className="py-3 px-6 text-center text-blue-400">Goles</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/60 text-xs font-bold text-slate-200">
+                          {goleadores.map((g, index) => (
+                            <tr key={index} className="hover:bg-slate-800/40 transition">
+                              <td className="py-4 px-6 text-center text-slate-400 font-black">
+                                {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                              </td>
+                              <td className="py-4 px-6 uppercase text-white font-black">{g.nombre}</td>
+                              <td className="py-4 px-6 uppercase text-slate-400">
+                                <div className="flex items-center gap-2">
+                                  {g.logo && <img src={g.logo} className="w-4 h-4 object-contain" alt="" />}
+                                  {g.equipo}
+                                </div>
+                              </td>
+                              <td className="py-4 px-6 text-center text-blue-300 font-black text-base bg-blue-950/20">
+                                {g.goles}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
               </div>
