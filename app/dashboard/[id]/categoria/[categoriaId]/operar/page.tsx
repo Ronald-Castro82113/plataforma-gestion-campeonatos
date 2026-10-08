@@ -312,6 +312,11 @@ export default function MesaControlPage({ params }: { params: Promise<{ id: stri
   const [detallesVisita, setDetallesVisita] = useState<DetalleEstadistica[]>([]);
   const [cargandoDetalles, setCargandoDetalles] = useState(false);
 
+  const [partidoEditar, setPartidoEditar] = useState<Partido | null>(null);
+  const [jugadoresEditarLocal, setJugadoresEditarLocal] = useState<DetalleEstadistica[]>([]);
+  const [jugadoresEditarVisita, setJugadoresEditarVisita] = useState<DetalleEstadistica[]>([]);
+  const [cargandoEdicion, setCargandoEdicion] = useState(false);
+
   const obtenerGoleadores = (lista: DetalleEstadistica[]) => lista.filter(j => j.goles > 0);
   const obtenerAmonestados = (lista: DetalleEstadistica[]) => lista.filter(j => j.tarjetas_amarillas > 0);
   const obtenerExpulsados = (lista: DetalleEstadistica[]) => lista.filter(j => j.tarjetas_rojas > 0);
@@ -581,6 +586,217 @@ export default function MesaControlPage({ params }: { params: Promise<{ id: stri
       console.error(e);
     } finally {
       setCargandoDetalles(false);
+    }
+  };
+
+  const abrirEdicionPartido = async (partido: Partido) => {
+    setPartidoEditar(partido);
+    setCargandoEdicion(true);
+
+    try {
+      const equipos = [
+        {
+          equipoId: partido.equipo_local?.id,
+          equipoNombre: partido.equipo_local?.nombre_equipo || 'Local'
+        },
+        {
+          equipoId: partido.equipo_visita?.id,
+          equipoNombre: partido.equipo_visita?.nombre_equipo || 'Visitante'
+        }
+      ];
+
+      const jugadoresPorEquipo: DetalleEstadistica[][] = [];
+
+      for (const equipo of equipos) {
+        if (!equipo.equipoId) {
+          jugadoresPorEquipo.push([]);
+          continue;
+        }
+
+        const { data: inscripciones, error: errorInscripciones } = await supabase
+          .from('inscripciones_jugadores')
+          .select(`
+            dorsal_numero,
+            jugador:jugador_id (
+              id,
+              nombre,
+              apellido
+            )
+          `)
+          .eq('equipo_id', equipo.equipoId);
+
+        if (errorInscripciones) throw errorInscripciones;
+
+        const { data: detalles, error: errorDetalles } = await supabase
+          .from('detalles_partidos')
+          .select(`
+            id,
+            jugador_id,
+            goles,
+            tarjetas_amarillas,
+            tarjetas_rojas
+          `)
+          .eq('partido_id', partido.id)
+          .eq('equipo_id', equipo.equipoId);
+
+        if (errorDetalles) throw errorDetalles;
+
+        const jugadores: DetalleEstadistica[] = (inscripciones || [])
+          .filter((inscripcion) => {
+            const jugador = Array.isArray(inscripcion.jugador)
+              ? inscripcion.jugador[0]
+              : inscripcion.jugador;
+
+            return !!jugador;
+          })
+          .map((inscripcion) => {
+            const jugador = Array.isArray(inscripcion.jugador)
+              ? inscripcion.jugador[0]
+              : inscripcion.jugador;
+
+            if (!jugador) {
+              return null;
+            }
+
+            const detalle = (detalles || []).find(
+              (item) => item.jugador_id === jugador.id
+            );
+
+            return {
+              id: detalle?.id || `nuevo-${jugador.id}`,
+              goles: detalle?.goles || 0,
+              tarjetas_amarillas: detalle?.tarjetas_amarillas || 0,
+              tarjetas_rojas: detalle?.tarjetas_rojas || 0,
+              equipo_id: equipo.equipoId!,
+              jugador: {
+                nombre: jugador.nombre || '',
+                apellido: jugador.apellido || ''
+              },
+              equipo: {
+                nombre_equipo: equipo.equipoNombre
+              },
+              nombreCompleto: `${jugador.nombre || ''} ${jugador.apellido || ''}`.trim()
+            };
+          })
+          .filter((jugador): jugador is DetalleEstadistica => jugador !== null);
+
+        jugadoresPorEquipo.push(jugadores);
+      }
+
+      setJugadoresEditarLocal(jugadoresPorEquipo[0] || []);
+      setJugadoresEditarVisita(jugadoresPorEquipo[1] || []);
+    } catch (error) {
+      const mensaje = error instanceof Error
+        ? error.message
+        : 'No se pudieron cargar los jugadores del partido';
+
+      setCustomAlert({
+        titulo: '❌ Error al cargar el partido',
+        mensaje,
+        accion: () => setCustomAlert(null)
+      });
+
+      setPartidoEditar(null);
+    } finally {
+      setCargandoEdicion(false);
+    }
+  };
+
+  const guardarCorreccionesPartido = async () => {
+    if (!partidoEditar) return;
+
+    setCargandoEdicion(true);
+
+    try {
+      const golesLocal = jugadoresEditarLocal.reduce(
+        (total, jugador) => total + jugador.goles,
+        0
+      );
+
+      const golesVisita = jugadoresEditarVisita.reduce(
+        (total, jugador) => total + jugador.goles,
+        0
+      );
+
+      const todosLosJugadores = [
+        ...jugadoresEditarLocal,
+        ...jugadoresEditarVisita
+      ];
+
+      for (const jugador of todosLosJugadores) {
+        const esNuevo = jugador.id.startsWith('nuevo-');
+
+        if (esNuevo) {
+          if (
+            jugador.goles === 0 &&
+            jugador.tarjetas_amarillas === 0 &&
+            jugador.tarjetas_rojas === 0
+          ) {
+            continue;
+          }
+
+          const jugadorId = jugador.id.replace('nuevo-', '');
+
+          const { error } = await supabase
+            .from('detalles_partidos')
+            .insert({
+              partido_id: partidoEditar.id,
+              jugador_id: jugadorId,
+              equipo_id: jugador.equipo_id,
+              goles: jugador.goles,
+              tarjetas_amarillas: jugador.tarjetas_amarillas,
+              tarjetas_rojas: jugador.tarjetas_rojas
+            });
+
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('detalles_partidos')
+            .update({
+              goles: jugador.goles,
+              tarjetas_amarillas: jugador.tarjetas_amarillas,
+              tarjetas_rojas: jugador.tarjetas_rojas
+            })
+            .eq('id', jugador.id);
+
+          if (error) throw error;
+        }
+      }
+
+      const { error: errorPartido } = await supabase
+        .from('partidos')
+        .update({
+          goles_local: golesLocal,
+          goles_visita: golesVisita
+        })
+        .eq('id', partidoEditar.id);
+
+      if (errorPartido) throw errorPartido;
+
+      setPartidoEditar(null);
+      setJugadoresEditarLocal([]);
+      setJugadoresEditarVisita([]);
+
+      await cargarDatosMesa();
+
+      setCustomAlert({
+        titulo: '✅ Partido corregido',
+        mensaje: `Marcador actualizado: ${golesLocal} - ${golesVisita}`,
+        accion: () => setCustomAlert(null)
+      });
+
+    } catch (error) {
+      const mensaje = error instanceof Error
+        ? error.message
+        : 'No se pudieron guardar las correcciones';
+
+      setCustomAlert({
+        titulo: '❌ Error al guardar',
+        mensaje,
+        accion: () => setCustomAlert(null)
+      });
+    } finally {
+      setCargandoEdicion(false);
     }
   };
 
@@ -1184,9 +1400,14 @@ export default function MesaControlPage({ params }: { params: Promise<{ id: stri
                             <span className="truncate w-5/12 text-right">{partido.equipo_visita?.nombre_equipo}</span>
                           </div>
                           <div className="flex justify-between items-center pt-2 border-t border-slate-50">
-                            <button onClick={() => abrirDetallesPartido(partido)} className="text-[10px] text-slate-500 font-bold hover:text-blue-600">
-                              📊 Ver Incidencias
-                            </button>
+                            <div className="flex items-center gap-3">
+                              <button onClick={() => abrirDetallesPartido(partido)} className="text-[10px] text-slate-500 font-bold hover:text-blue-600">
+                                📊 Ver Incidencias
+                              </button>
+                              <button onClick={() => abrirEdicionPartido(partido)} className="text-[10px] text-amber-600 font-bold hover:text-amber-700">
+                                ✏️ Corregir
+                              </button>
+                           </div>
                             {(partido.estado === 'programado' || partido.estado === 'suspendido') && (
                               <button
                                 disabled={!!estaAsignadoHoy}
@@ -1384,6 +1605,409 @@ export default function MesaControlPage({ params }: { params: Promise<{ id: stri
               </div>
 
               <button onClick={() => setPartidoDetalle(null)} className="w-full bg-slate-900 text-white font-bold py-2.5 rounded-2xl text-xs transition hover:bg-slate-800">Cerrar Reporte</button>
+            </div>
+          </div>
+        )}
+
+        {partidoEditar && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
+            <div className="bg-white max-w-4xl w-full max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl border border-slate-100 flex flex-col">
+
+              {/* ENCABEZADO */}
+              <div className="p-5 border-b border-slate-100">
+                <div className="flex justify-between items-start gap-3">
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">
+                      ✏️ Corregir Partido
+                    </h3>
+
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      {partidoEditar.equipo_local?.nombre_equipo}
+                      {' '}
+                      <span className="font-black text-blue-600">
+                        {partidoEditar.goles_local ?? 0} - {partidoEditar.goles_visita ?? 0}
+                      </span>
+                      {' '}
+                      {partidoEditar.equipo_visita?.nombre_equipo}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => setPartidoEditar(null)}
+                    className="text-slate-400 hover:text-red-500 text-xl font-black"
+                    title="Cerrar"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+
+              {/* CONTENIDO */}
+              <div className="p-5 overflow-y-auto">
+
+                {cargandoEdicion ? (
+                  <div className="py-12 text-center">
+                    <div className="text-3xl mb-3">⏳</div>
+                    <p className="text-xs font-bold text-slate-500">
+                      Cargando jugadores...
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    {/* LOCAL */}
+                    <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                      <div className="bg-blue-50 px-4 py-3 border-b border-blue-100">
+                        <h4 className="text-xs font-black text-blue-700 uppercase">
+                          🏠 {partidoEditar.equipo_local?.nombre_equipo}
+                        </h4>
+                      </div>
+
+                      <div className="p-3 space-y-2">
+                        {jugadoresEditarLocal.length === 0 ? (
+                          <p className="text-xs text-slate-400 text-center py-5">
+                            No hay jugadores inscritos.
+                          </p>
+                        ) : (
+                          jugadoresEditarLocal.map((jugador) => (
+                            <div
+                              key={jugador.id}
+                              className="border border-slate-100 rounded-xl p-3 bg-white"
+                            >
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs font-bold text-slate-800">
+                                  {jugador.nombreCompleto}
+                                </span>
+
+                                <span className="text-[10px] text-slate-400">
+                                  {jugador.equipo.nombre_equipo}
+                                </span>
+                              </div>
+
+                              <div className="flex flex-wrap items-center gap-2 mt-3">
+
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setJugadoresEditarLocal((actuales) =>
+                                        actuales.map((j) =>
+                                          j.id === jugador.id
+                                            ? { ...j, goles: Math.max(0, j.goles - 1) }
+                                            : j
+                                        )
+                                      );
+                                    }}
+                                    className="w-6 h-6 rounded-lg bg-red-50 text-red-600 font-black hover:bg-red-100"
+                                  >
+                                    −
+                                  </button>
+
+                                  <span className="text-[10px] font-black text-green-600 min-w-[42px] text-center">
+                                    ⚽ {jugador.goles}
+                                  </span>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setJugadoresEditarLocal((actuales) =>
+                                        actuales.map((j) =>
+                                          j.id === jugador.id
+                                            ? { ...j, goles: j.goles + 1 }
+                                            : j
+                                        )
+                                      );
+                                    }}
+                                    className="w-6 h-6 rounded-lg bg-green-50 text-green-600 font-black hover:bg-green-100"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setJugadoresEditarLocal((actuales) =>
+                                        actuales.map((j) =>
+                                          j.id === jugador.id
+                                            ? {
+                                                ...j,
+                                                tarjetas_amarillas: Math.max(0, j.tarjetas_amarillas - 1)
+                                              }
+                                            : j
+                                        )
+                                      );
+                                    }}
+                                    className="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 font-black hover:bg-amber-100"
+                                  >
+                                    −
+                                  </button>
+
+                                  <span className="text-[10px] font-black text-amber-600 min-w-[42px] text-center">
+                                    🟨 {jugador.tarjetas_amarillas}
+                                  </span>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setJugadoresEditarLocal((actuales) =>
+                                        actuales.map((j) =>
+                                          j.id === jugador.id
+                                            ? {
+                                                ...j,
+                                                tarjetas_amarillas: j.tarjetas_amarillas + 1
+                                              }
+                                            : j
+                                        )
+                                      );
+                                    }}
+                                    className="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 font-black hover:bg-amber-100"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setJugadoresEditarLocal((actuales) =>
+                                        actuales.map((j) =>
+                                          j.id === jugador.id
+                                            ? {
+                                                ...j,
+                                                tarjetas_rojas: Math.max(0, j.tarjetas_rojas - 1)
+                                              }
+                                            : j
+                                        )
+                                      );
+                                    }}
+                                    className="w-6 h-6 rounded-lg bg-red-50 text-red-600 font-black hover:bg-red-100"
+                                  >
+                                    −
+                                  </button>
+
+                                  <span className="text-[10px] font-black text-red-600 min-w-[42px] text-center">
+                                    🟥 {jugador.tarjetas_rojas}
+                                  </span>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setJugadoresEditarLocal((actuales) =>
+                                        actuales.map((j) =>
+                                          j.id === jugador.id
+                                            ? {
+                                                ...j,
+                                                tarjetas_rojas: j.tarjetas_rojas + 1
+                                              }
+                                            : j
+                                        )
+                                      );
+                                    }}
+                                    className="w-6 h-6 rounded-lg bg-red-50 text-red-600 font-black hover:bg-red-100"
+                                  >
+                                    +
+                                  </button>
+
+                                </div>
+
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* VISITA */}
+                    <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                      <div className="bg-blue-50 px-4 py-3 border-b border-blue-100">
+                        <h4 className="text-xs font-black text-blue-700 uppercase">
+                          ✈️ {partidoEditar.equipo_visita?.nombre_equipo}
+                        </h4>
+                      </div>
+
+                      <div className="p-3 space-y-2">
+                        {jugadoresEditarVisita.length === 0 ? (
+                          <p className="text-xs text-slate-400 text-center py-5">
+                            No hay jugadores inscritos.
+                          </p>
+                        ) : (
+                          jugadoresEditarVisita.map((jugador) => (
+                            <div
+                              key={jugador.id}
+                              className="border border-slate-100 rounded-xl p-3 bg-white"
+                            >
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs font-bold text-slate-800">
+                                  {jugador.nombreCompleto}
+                                </span>
+
+                                <span className="text-[10px] text-slate-400">
+                                  {jugador.equipo.nombre_equipo}
+                                </span>
+                              </div>
+
+                              <div className="flex flex-wrap items-center gap-2 mt-3">
+
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setJugadoresEditarVisita((actuales) =>
+                                        actuales.map((j) =>
+                                          j.id === jugador.id
+                                            ? { ...j, goles: Math.max(0, j.goles - 1) }
+                                            : j
+                                        )
+                                      );
+                                    }}
+                                    className="w-6 h-6 rounded-lg bg-red-50 text-red-600 font-black hover:bg-red-100"
+                                  >
+                                    −
+                                  </button>
+
+                                  <span className="text-[10px] font-black text-green-600 min-w-[42px] text-center">
+                                    ⚽ {jugador.goles}
+                                  </span>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setJugadoresEditarVisita((actuales) =>
+                                        actuales.map((j) =>
+                                          j.id === jugador.id
+                                            ? { ...j, goles: j.goles + 1 }
+                                            : j
+                                        )
+                                      );
+                                    }}
+                                    className="w-6 h-6 rounded-lg bg-green-50 text-green-600 font-black hover:bg-green-100"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setJugadoresEditarVisita((actuales) =>
+                                        actuales.map((j) =>
+                                          j.id === jugador.id
+                                            ? {
+                                                ...j,
+                                                tarjetas_amarillas: Math.max(0, j.tarjetas_amarillas - 1)
+                                              }
+                                            : j
+                                        )
+                                      );
+                                    }}
+                                    className="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 font-black hover:bg-amber-100"
+                                  >
+                                    −
+                                  </button>
+
+                                  <span className="text-[10px] font-black text-amber-600 min-w-[42px] text-center">
+                                    🟨 {jugador.tarjetas_amarillas}
+                                  </span>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setJugadoresEditarVisita((actuales) =>
+                                        actuales.map((j) =>
+                                          j.id === jugador.id
+                                            ? {
+                                                ...j,
+                                                tarjetas_amarillas: j.tarjetas_amarillas + 1
+                                              }
+                                            : j
+                                        )
+                                      );
+                                    }}
+                                    className="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 font-black hover:bg-amber-100"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setJugadoresEditarVisita((actuales) =>
+                                        actuales.map((j) =>
+                                          j.id === jugador.id
+                                            ? {
+                                                ...j,
+                                                tarjetas_rojas: Math.max(0, j.tarjetas_rojas - 1)
+                                              }
+                                            : j
+                                        )
+                                      );
+                                    }}
+                                    className="w-6 h-6 rounded-lg bg-red-50 text-red-600 font-black hover:bg-red-100"
+                                  >
+                                    −
+                                  </button>
+
+                                  <span className="text-[10px] font-black text-red-600 min-w-[42px] text-center">
+                                    🟥 {jugador.tarjetas_rojas}
+                                  </span>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setJugadoresEditarVisita((actuales) =>
+                                        actuales.map((j) =>
+                                          j.id === jugador.id
+                                            ? {
+                                                ...j,
+                                                tarjetas_rojas: j.tarjetas_rojas + 1
+                                              }
+                                            : j
+                                        )
+                                      );
+                                    }}
+                                    className="w-6 h-6 rounded-lg bg-red-50 text-red-600 font-black hover:bg-red-100"
+                                  >
+                                    +
+                                  </button>
+
+                                </div>
+
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                  </div>
+                )}
+
+              </div>
+
+              {/* PIE */}
+              <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">
+                <button
+                  onClick={() => setPartidoEditar(null)}
+                  className="bg-slate-200 text-slate-700 font-bold px-5 py-2.5 rounded-xl text-xs hover:bg-slate-300 transition"
+                >
+                  Cerrar
+                </button>
+
+                <button
+                  onClick={guardarCorreccionesPartido}
+                  disabled={cargandoEdicion}
+                  className="bg-blue-600 text-white font-bold px-5 py-2.5 rounded-xl text-xs hover:bg-blue-700 transition disabled:opacity-50"
+                >
+                  {cargandoEdicion ? '⏳ Guardando...' : '💾 Guardar Correcciones'}
+                </button>
+              </div>
+
             </div>
           </div>
         )}
