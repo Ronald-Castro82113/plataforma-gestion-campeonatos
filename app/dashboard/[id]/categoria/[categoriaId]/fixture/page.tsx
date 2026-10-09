@@ -54,6 +54,16 @@ interface PartidoInsertar {
   lugar: string;
 }
 
+interface AjustePuntos {
+  id: string;
+  grupo_id: string;
+  equipo_id: string;
+  puntos: number;
+  motivo: string;
+  creado_en: string;
+  creado_por: string | null;
+}
+
 export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id: string; categoriaId: string }> }) {
   const { id: campeonatoId, categoriaId } = use(params);
   const router = useRouter();
@@ -64,6 +74,14 @@ export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id:
   const [equiposTotales, setEquiposTotales] = useState<Equipo[]>([]);
   const [relacionesGrupos, setRelacionesGrupos] = useState<EquipoEnGrupo[]>([]);
   const [partidos, setPartidos] = useState<Partido[]>([]);
+
+    // Ajustes administrativos de puntos
+  const [grupoAjuste, setGrupoAjuste] = useState('');
+  const [equipoAjuste, setEquipoAjuste] = useState('');
+  const [puntosAjuste, setPuntosAjuste] = useState('');
+  const [motivoAjuste, setMotivoAjuste] = useState('');
+  const [historialAjustes, setHistorialAjustes] = useState<AjustePuntos[]>([]);
+  const [cargandoAjustes, setCargandoAjustes] = useState(false);
 
   // Formulario Formato
   const [nombreFase, setNombreFase] = useState('Primera Etapa');
@@ -119,6 +137,8 @@ export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id:
           .order('nombre_grupo', { ascending: true });
         setGrupos(gruposData || []);
 
+        await cargarHistorialAjustes(gruposData || []);
+
         if (gruposData && gruposData.length > 0) {
           const listaIds = gruposData.map((g: Grupo) => g.id);
           const { data: relData } = await supabase
@@ -142,12 +162,141 @@ export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id:
     }
   };
 
+  
+  const guardarAjustePuntos = async () => {
+    if (!grupoAjuste || !equipoAjuste) {
+      setMensajeAlerta('Selecciona el grupo y el equipo.');
+      return;
+    }
+
+    const puntos = Number(puntosAjuste);
+
+    if (
+      puntosAjuste.trim() === '' ||
+      !Number.isInteger(puntos) ||
+      puntos === 0
+    ) {
+      setMensajeAlerta('Ingresa una cantidad de puntos entera distinta de cero. Usa un número positivo o negativo.');
+      return;
+    }
+
+    const motivo = motivoAjuste.trim();
+
+    if (!motivo) {
+      setMensajeAlerta('Debes escribir el motivo del ajuste.');
+      return;
+    }
+
+    const equipoPerteneceAlGrupo = relacionesGrupos.some(
+      (relacion: EquipoEnGrupo) =>
+        relacion.grupo_id === grupoAjuste &&
+        relacion.equipos?.id === equipoAjuste
+    );
+
+    if (!equipoPerteneceAlGrupo) {
+      setMensajeAlerta('El equipo seleccionado no pertenece a ese grupo.');
+      return;
+    }
+
+    setBtnLoading(true);
+
+    try {
+      const { data: usuarioData, error: errorUsuario } =
+        await supabase.auth.getUser();
+
+      if (errorUsuario) throw errorUsuario;
+
+      const usuario = usuarioData.user;
+
+      if (!usuario) {
+        setMensajeAlerta('Tu sesión ha expirado. Inicia sesión nuevamente.');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('ajustes_puntos')
+        .insert({
+          grupo_id: grupoAjuste,
+          equipo_id: equipoAjuste,
+          puntos,
+          motivo,
+          creado_por: usuario.id
+        });
+
+      if (error) throw error;
+
+      setPuntosAjuste('');
+      setMotivoAjuste('');
+
+      await cargarHistorialAjustes(grupos);
+
+      setMensajeAlerta(
+        `Ajuste registrado correctamente: ${puntos > 0 ? '+' : ''}${puntos} puntos.`
+      );
+    } catch (error: unknown) {
+      console.error('Error al registrar el ajuste:', error);
+
+      const detalle =
+        error instanceof Error ? error.message : 'Error desconocido';
+
+      setMensajeAlerta(`No se pudo registrar el ajuste. ${detalle}`);
+    } finally {
+      setBtnLoading(false);
+    }
+  };
+
+  
+  
+  const cargarHistorialAjustes = async (
+    gruposActuales: Grupo[]
+  ) => {
+    if (gruposActuales.length === 0) {
+      setHistorialAjustes([]);
+      return;
+    }
+
+    setCargandoAjustes(true);
+
+    try {
+      const idsGrupos = gruposActuales.map(
+        (grupo: Grupo) => grupo.id
+      );
+
+      const { data, error } = await supabase
+        .from('ajustes_puntos')
+        .select(
+          'id, grupo_id, equipo_id, puntos, motivo, creado_en, creado_por'
+        )
+        .in('grupo_id', idsGrupos)
+        .order('creado_en', { ascending: false });
+
+      if (error) throw error;
+
+      setHistorialAjustes((data ?? []) as AjustePuntos[]);
+    } catch (error: unknown) {
+      console.error(
+        'Error al cargar el historial de ajustes:',
+        error
+      );
+      setMensajeAlerta(
+        'No se pudo cargar el historial de ajustes.'
+      );
+    } finally {
+      setCargandoAjustes(false);
+    }
+  };
+  
   useEffect(() => {
     const cargarDatosIniciales = async () => {
       setLoading(true);
-      await refrescarTodoElTorneo();
-      setLoading(false);
+
+      try {
+        await refrescarTodoElTorneo();
+      } finally {
+        setLoading(false);
+      }
     };
+
     cargarDatosIniciales();
   }, [categoriaId]);
 
@@ -1254,6 +1403,183 @@ export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id:
                 </div>
               </div>
             )}
+
+            
+            {fases.length > 0 &&
+              fases[0].tipo_formato === 'grupos' &&
+              grupos.length > 0 && (
+                <div className="bg-white border border-amber-200 rounded-2xl p-6 shadow-sm space-y-5">
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-amber-700">
+                      ⚖️ Ajustes administrativos de puntos
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                      Registra bonificaciones o sanciones sin modificar los resultados de los partidos.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                      Grupo
+                    </label>
+                    <select
+                      value={grupoAjuste}
+                      onChange={(e) => {
+                        setGrupoAjuste(e.target.value);
+                        setEquipoAjuste('');
+                      }}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs"
+                    >
+                      <option value="">-- Selecciona un grupo --</option>
+                      {grupos.map((grupo: Grupo) => (
+                        <option key={grupo.id} value={grupo.id}>
+                          {grupo.nombre_grupo}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                      Equipo
+                    </label>
+                    <select
+                      value={equipoAjuste}
+                      onChange={(e) => setEquipoAjuste(e.target.value)}
+                      disabled={!grupoAjuste}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs disabled:opacity-50"
+                    >
+                      <option value="">-- Selecciona un equipo --</option>
+                      {relacionesGrupos
+                        .filter(
+                          (relacion: EquipoEnGrupo) =>
+                            relacion.grupo_id === grupoAjuste &&
+                            relacion.equipos !== null
+                        )
+                        .map((relacion: EquipoEnGrupo) => (
+                          <option
+                            key={relacion.id}
+                            value={relacion.equipos!.id}
+                          >
+                            {relacion.equipos!.nombre_equipo}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                      Puntos a ajustar
+                    </label>
+                    <input
+                      type="number"
+                      step="1"
+                      value={puntosAjuste}
+                      onChange={(e) => setPuntosAjuste(e.target.value)}
+                      placeholder="Ej. 2 para sumar o -1 para restar"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      Positivo = suma. Negativo = resta.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                      Motivo obligatorio
+                    </label>
+                    <textarea
+                      value={motivoAjuste}
+                      onChange={(e) => setMotivoAjuste(e.target.value)}
+                      placeholder="Ej. Sanción aprobada por la organización..."
+                      rows={3}
+                      maxLength={500}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={guardarAjustePuntos}
+                    disabled={btnLoading}
+                    className="w-full rounded-xl bg-amber-600 py-3 text-xs font-bold text-white hover:bg-amber-700 transition disabled:opacity-50"
+                  >
+                    {btnLoading ? 'Guardando ajuste...' : '⚖️ Registrar ajuste de puntos'}
+                  </button>
+                  
+                  <div className="border-t border-amber-200 pt-5 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                        Historial de ajustes
+                      </h4>
+                      <span className="text-[10px] text-slate-500">
+                        {historialAjustes.length} registro(s)
+                      </span>
+                    </div>
+
+                    {cargandoAjustes ? (
+                      <p className="text-xs text-slate-500">
+                        Cargando historial...
+                      </p>
+                    ) : historialAjustes.length === 0 ? (
+                      <p className="rounded-xl bg-slate-50 p-4 text-xs text-slate-500">
+                        Todavía no hay ajustes registrados para estos grupos.
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {historialAjustes.map((ajuste: AjustePuntos) => {
+                          const grupo = grupos.find(
+                            (item: Grupo) => item.id === ajuste.grupo_id
+                          );
+
+                          const relacion = relacionesGrupos.find(
+                            (item: EquipoEnGrupo) =>
+                              item.grupo_id === ajuste.grupo_id &&
+                              item.equipos?.id === ajuste.equipo_id
+                          );
+
+                          return (
+                            <div
+                              key={ajuste.id}
+                              className="rounded-xl border border-slate-200 p-4 space-y-2"
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <p className="text-sm font-bold text-slate-800">
+                                    {relacion?.equipos?.nombre_equipo ?? 'Equipo'}
+                                  </p>
+                                  <p className="text-[10px] text-slate-500">
+                                    {grupo?.nombre_grupo ?? 'Grupo'}
+                                  </p>
+                                </div>
+
+                                <span
+                                  className={`shrink-0 rounded-lg px-2 py-1 text-xs font-black ${
+                                    ajuste.puntos > 0
+                                      ? 'bg-emerald-100 text-emerald-700'
+                                      : 'bg-red-100 text-red-700'
+                                  }`}
+                                >
+                                  {ajuste.puntos > 0 ? '+' : ''}
+                                  {ajuste.puntos} pts
+                                </span>
+                              </div>
+
+                              <p className="text-xs text-slate-600">
+                                {ajuste.motivo}
+                              </p>
+
+                              <p className="text-[10px] text-slate-400">
+                                {new Date(ajuste.creado_en).toLocaleString('es-EC')}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
             <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Calendario Oficial de Partidos</h3>
