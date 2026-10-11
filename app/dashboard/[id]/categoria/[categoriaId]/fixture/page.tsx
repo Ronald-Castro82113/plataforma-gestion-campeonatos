@@ -149,13 +149,25 @@ export default function ConfigurarTorneoPage({ params }: { params: Promise<{ id:
         }
 
         // CORRECCIÓN: Se eliminó created_at para evitar errores de columnas inexistentes en la tabla partidos
+        // const { data: partidosData } = await supabase
+        //   .from('partidos')
+        //   .select('id, numero_fecha, orden, goles_local, goles_visita, estado, equipo_local:equipo_local_id (id, nombre_equipo), equipo_visita:equipo_visita_id (id, nombre_equipo)')
+        //   .eq('fase_id', faseActiva.id)
+        //   .order('orden', { ascending: true });
+
+        // setPartidos((partidosData as unknown as Partido[]) || []);
+
+        
         const { data: partidosData } = await supabase
           .from('partidos')
           .select('id, numero_fecha, orden, goles_local, goles_visita, estado, equipo_local:equipo_local_id (id, nombre_equipo), equipo_visita:equipo_visita_id (id, nombre_equipo)')
           .eq('fase_id', faseActiva.id)
+          .order('numero_fecha', { ascending: true })
           .order('orden', { ascending: true });
 
         setPartidos((partidosData as unknown as Partido[]) || []);
+
+
       }
     } catch (error: unknown) {
       console.error('Error al actualizar la pizarra unificada', error);

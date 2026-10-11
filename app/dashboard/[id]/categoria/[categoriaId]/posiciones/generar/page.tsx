@@ -184,13 +184,14 @@ export default function GenerarLlavesPage({
     if (tipoRonda === '2') nombreJornadaPlayoff = 'Semifinal';
     if (tipoRonda === '1') nombreJornadaPlayoff = 'Gran Final';
 
-    const partidosParaInsertar = crucesManuales.map((cruce) => ({
+    const partidosParaInsertar = crucesManuales.map((cruce, index) => ({
       fase_id: faseIdDestino,
       grupo_id: null,
       equipo_local_id: cruce.localId,
       equipo_visita_id: cruce.visitaId,
       numero_fecha: nombreJornadaPlayoff,
       estado: 'programado',
+      orden: index + 1,
     }));
 
     const { error } = await supabase

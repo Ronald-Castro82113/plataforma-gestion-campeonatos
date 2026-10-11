@@ -622,7 +622,21 @@ export default function VistaPublicaTorneoPage({ params }: { params: Promise<{ i
 
   const partidosEnVivo = partidos.filter((p) => p.estado === 'en_vivo');
   const partidosEliminacion = partidos.filter((p) => p.grupo_id === null);
-  const rondasExistentes = Array.from(new Set(partidosEliminacion.map((p) => p.numero_fecha))).sort((a, b) => {
+  
+  // Ocultar el tercer puesto si el organizador no lo ha asignado.
+  const partidosEliminacionVisibles = partidosEliminacion.filter((p) => {
+    const nf = (p.numero_fecha || '').toLowerCase().trim();
+
+    if (nf.includes('tercer') || nf.includes('tercero')) {
+      return p.fecha_partido !== null && p.fecha_partido !== '';
+    }
+
+    return true;
+  });
+
+  const rondasExistentes = Array.from(
+    new Set(partidosEliminacionVisibles.map((p) => p.numero_fecha))
+  ).sort((a, b) => {
     return obtenerPesoFasePublica(a) - obtenerPesoFasePublica(b);
   });
 
@@ -646,11 +660,17 @@ export default function VistaPublicaTorneoPage({ params }: { params: Promise<{ i
 
     return url;
   };
-
+  
   const partidoFinal = partidosEliminacion.find((p) => {
     const nf = (p.numero_fecha || '').toLowerCase().trim();
-    return (nf === 'final' || nf === 'gran final') && p.estado === 'finalizado';
-  }) || partidosEliminacion.find((p) => (p.numero_fecha || '').toLowerCase().includes('final') && p.estado === 'finalizado');
+    const estado = (p.estado || '').toLowerCase().trim();
+
+    return (
+      (nf === 'final' || nf === 'gran final') &&
+      estado === 'finalizado'
+    );
+  });
+
 
   let nombreCampeon: string | null = null;
   if (partidoFinal) {
@@ -1257,12 +1277,12 @@ export default function VistaPublicaTorneoPage({ params }: { params: Promise<{ i
                   </div>
                 )}
 
-                {partidosEliminacion.length > 0 && (
+                {partidosEliminacionVisibles.length > 0 && (
                   <div className="space-y-6 pt-4">
                     <h2 className="text-xs font-black uppercase text-slate-400 tracking-widest">🏆 Fases de Eliminación y Finales</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
                       {rondasExistentes.map((rondaNombre) => {
-                        const partidosRonda = partidosEliminacion.filter((p) => p.numero_fecha === rondaNombre);
+                        const partidosRonda = partidosEliminacionVisibles.filter((p) => p.numero_fecha === rondaNombre);
                         return (
                           <div key={rondaNombre} className="space-y-4">
                             <div className="bg-slate-800 text-slate-200 font-black uppercase text-[11px] text-center py-2.5 rounded-xl tracking-wider border border-slate-700">

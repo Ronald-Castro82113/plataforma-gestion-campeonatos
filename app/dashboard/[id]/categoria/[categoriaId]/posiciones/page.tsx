@@ -212,7 +212,7 @@ export default function PosicionesCategoriaPage({
                     const estadoPartido = (p.estado || '').toLowerCase().trim();
                     
                     // Excluimos explícitamente "semifinal" para evitar falsos positivos
-                    const esFinalReal = numFecha.includes('final') && !numFecha.includes('semi');
+                    const esFinalReal = numFecha === 'final' || numFecha === 'gran final';
                     return esFinalReal && estadoPartido === 'finalizado';
                   });
 

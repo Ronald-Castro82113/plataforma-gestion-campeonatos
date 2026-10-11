@@ -111,73 +111,6 @@ export default function MesaControlPage({ params }: { params: Promise<{ id: stri
     return null;
   }
 
-  // async function avanzarGanadorASiguienteRonda(partidoActual: Partido, ganadorId: string) {
-  //   try {
-  //     const etapaActual = (partidoActual.numero_fecha || '').toLowerCase().trim();
-  //     let siguienteEtapa = '';
-
-  //     if (etapaActual.includes('octavo')) {
-  //       siguienteEtapa = 'Cuartos de Final';
-  //     } else if (etapaActual.includes('cuarto')) {
-  //       siguienteEtapa = 'Semifinales';
-  //     } else if (etapaActual.includes('semi')) {
-  //       siguienteEtapa = 'Gran Final';
-  //     } else {
-  //       return;
-  //     }
-
-  //     const { data: partidosSiguientes } = await supabase
-  //       .from('partidos')
-  //       .select('id, equipo_local_id, equipo_visita_id')
-  //       .eq('fase_id', partidoActual.fase_id)
-  //       .eq('numero_fecha', siguienteEtapa)
-  //       .is('grupo_id', null)
-  //       .or('equipo_local_id.is.null,equipo_visita_id.is.null')
-  //       .limit(1);
-
-  //     if (partidosSiguientes && partidosSiguientes.length > 0) {
-  //       const partidoDestino = partidosSiguientes[0];
-
-  //       if (partidoDestino.equipo_local_id === ganadorId || partidoDestino.equipo_visita_id === ganadorId) return;
-
-  //       if (!partidoDestino.equipo_local_id) {
-  //         await supabase
-  //           .from('partidos')
-  //           .update({ equipo_local_id: ganadorId })
-  //           .eq('id', partidoDestino.id);
-  //       } else if (!partidoDestino.equipo_visita_id) {
-  //         await supabase
-  //           .from('partidos')
-  //           .update({ equipo_visita_id: ganadorId })
-  //           .eq('id', partidoDestino.id);
-  //       }
-  //     } else {
-  //       const { data: maxOrdenData } = await supabase
-  //         .from('partidos')
-  //         .select('orden')
-  //         .eq('fase_id', partidoActual.fase_id)
-  //         .order('orden', { ascending: false })
-  //         .limit(1);
-
-  //       const siguienteOrden = (maxOrdenData?.[0]?.orden ?? 0) + 1;
-
-
-  //       await supabase.from('partidos').insert({
-  //         fase_id: partidoActual.fase_id,
-  //         grupo_id: null,
-  //         equipo_local_id: ganadorId,
-  //         equipo_visita_id: null,
-  //         numero_fecha: siguienteEtapa,
-  //         estado: 'programado',
-  //         periodo_actual: 'no_iniciado',
-  //         orden: siguienteOrden
-  //       });
-  //     }
-  //   } catch (err) {
-  //     console.error('Error al hacer avanzar al equipo:', err);
-  //   }
-  // }
-
   function determinarPerdedorId(partido: Partido): string | null {
     const ganadorId = determinarGanadorId(partido);
     if (!ganadorId) return null;
@@ -1310,10 +1243,32 @@ export default function MesaControlPage({ params }: { params: Promise<{ id: stri
         ) : (
           <div className="space-y-6">
             {llavesOrdenadas.map((numFecha) => {
-              const partidosDeLaFase = [...(partidosPorFecha[numFecha] || [])].sort((a, b) => {
-                if (a.orden !== b.orden) return (a.orden || 0) - (b.orden || 0);
-                return a.id.localeCompare(b.id);
+              // Partidos de fase
+              // const partidosDeLaFase = [...(partidosPorFecha[numFecha] || [])].sort((a, b) => {
+              //   if (a.orden !== b.orden) return (a.orden || 0) - (b.orden || 0);
+              //   return a.id.localeCompare(b.id);
+              //   });
+              
+              const partidosDeLaFase = [...(partidosPorFecha[numFecha] || [])];
+
+              if (
+                numFecha.toLowerCase().includes('octavos') ||
+                numFecha.toLowerCase().includes('cuartos') ||
+                numFecha.toLowerCase().includes('semifinal') ||
+                numFecha.toLowerCase().includes('final')
+              ) {
+                partidosDeLaFase.sort((a, b) => {
+                  if (a.orden != null && b.orden == null) return -1;
+                  if (a.orden == null && b.orden != null) return 1;
+
+                  if (a.orden != null && b.orden != null) {
+                    return a.orden - b.orden;
+                  }
+
+                  return 0;
                 });
+              }
+
               const esNumero = !isNaN(Number(numFecha.replace(/\D/g, '')));
               const esFinales = numFecha.toLowerCase().includes('final') || numFecha.toLowerCase().includes('tercer');
               const tituloJornada = esNumero && !isNaN(Number(numFecha)) ? `🗓️ Jornada ${numFecha}` : `🏆 ${numFecha}`;
