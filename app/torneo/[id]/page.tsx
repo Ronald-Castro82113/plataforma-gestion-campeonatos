@@ -627,9 +627,9 @@ export default function VistaPublicaTorneoPage({ params }: { params: Promise<{ i
   const partidosEliminacionVisibles = partidosEliminacion.filter((p) => {
     const nf = (p.numero_fecha || '').toLowerCase().trim();
 
-    if (nf.includes('semifinal')) {
-      return false;
-    }
+    // if (nf.includes('semifinal')) {
+    //   return false;
+    // }
 
     if (nf.includes('tercer') || nf.includes('tercero')) {
       return p.fecha_partido !== null && p.fecha_partido !== '';
@@ -694,9 +694,9 @@ export default function VistaPublicaTorneoPage({ params }: { params: Promise<{ i
   const partidosFiltrados = partidos.filter((p) => {
     const nf = (p.numero_fecha || '').toLowerCase();
 
-    if (nf.includes('semifinal')) {
-      return false;
-    }
+    // if (nf.includes('semifinal')) {
+    //   return false;
+    // }
 
     if (nf.includes('tercer') || nf.includes('tercero')) {
       return p.fecha_partido !== null && p.fecha_partido !== '';
